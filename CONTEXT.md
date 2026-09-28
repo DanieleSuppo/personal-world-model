@@ -83,3 +83,43 @@ _Avoid_: Validity, current status
 **Context Bundle**:
 A task-specific response for a Consumer that combines a rich natural-language briefing with only the structured constraints needed for deterministic behavior.
 _Avoid_: Full profile dump, memory export
+
+**Managed Runtime Processing**:
+Authorized processing of decrypted Personal World Model data within the managed service's controlled runtime, without granting the service operator standing human access to that data.
+_Avoid_: Zero knowledge, operator access
+
+**Managed Key Custody**:
+Service-controlled, tenant-separated key material that protects managed authoritative state and compact lineage while permitting only authorized Managed Runtime Processing.
+_Avoid_: User-managed runtime key, operator content access
+
+**User-Controlled Export Encryption**:
+Encryption of a Portable Personal World Model Package with a user-chosen key or passphrase that is not held by the managed service and is required to import the package elsewhere.
+_Avoid_: Managed export key, recoverable export
+
+**Content-Blind Support**:
+Support that diagnoses a Personal World Model through operational metadata, user-provided material, and user-visible diagnostics without staff inspection of decrypted personal content.
+_Avoid_: Break-glass access, content support
+
+**Portable Personal World Model Package**:
+The exportable representation of authoritative Model Assertions, their semantic metadata, compact reassessment lineage, and source, consumer, and policy configuration needed to continue using a Personal World Model elsewhere.
+_Avoid_: Raw-data archive, provider backup
+
+**Self-Hosted Compatibility**:
+The ability for an independently operated deployment to import and export the Portable Personal World Model Package while preserving the same semantic and selective-disclosure contracts as managed deployment.
+_Avoid_: Managed feature parity, a specific installer
+
+**Self-Hosted Operator**:
+The user or chosen operator responsible for the identity, keys, infrastructure, retention, availability, and trust boundary of a self-hosted deployment.
+_Avoid_: Managed service operator, automatic content-blind support
+
+**Confidential-Compute Compatibility**:
+The ability of a future confidential-compute deployment to preserve the observable Personal World Model contracts without making the managed product a confidential-compute promise.
+_Avoid_: Managed confidential compute, specified TEE
+
+**Purpose-Bound Model Processor**:
+An explicitly named external model provider that may process only the minimum Personal World Model content needed for an authorized managed operation, without training rights or retention beyond that operation.
+_Avoid_: Unnamed AI vendor, general data recipient
+
+**Managed Account Exit**:
+The managed account-closure process: immediate Consumer and Source revocation, user export, and deletion of managed authoritative state, compact lineage, and their protecting key material within a disclosed retention window, separately from backup expiry.
+_Avoid_: Source-system deletion, instant backup deletion
