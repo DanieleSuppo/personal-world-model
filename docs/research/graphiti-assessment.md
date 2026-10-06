@@ -1,6 +1,6 @@
 # Graphiti Assessment for the Personal World Model
 
-**Scope.** This note assesses [getzep/graphiti](https://github.com/getzep/graphiti) for concepts worth adopting by the Personal World Model (PWM). It is not an implementation plan or a recommendation to introduce Graphiti, Neo4j, or another graph database. Sources were checked on 2026-09-11 and are Graphiti's official repository and documentation, plus the PWM's established contracts in [CONTEXT.md](../../CONTEXT.md) and [MVP specification issue #16](https://github.com/DanieleSuppo/personal-world-model/issues/16).
+**Scope.** This note assesses [getzep/graphiti](https://github.com/getzep/graphiti) for concepts worth adopting by the Personal World Model (PWM). It is not an implementation plan or a recommendation to introduce Graphiti, Neo4j, or another graph database. Sources were checked on 2026-09-11 and are Graphiti's official repository and documentation, plus the PWM's established contracts in [GLOSSARY.md](../../GLOSSARY.md) and [MVP specification issue #16](https://github.com/DanieleSuppo/personal-world-model/issues/16).
 
 ## Conclusion
 
@@ -38,7 +38,7 @@ This adopts Graphiti's retrieval and temporal-provenance lessons while preservin
 
 ## Sources
 
-[^1]: [PWM MVP specification issue #16](https://github.com/DanieleSuppo/personal-world-model/issues/16), especially Implementation Decisions; see also [CONTEXT.md](../../CONTEXT.md) for the defined contracts and vocabulary.
+[^1]: [PWM MVP specification issue #16](https://github.com/DanieleSuppo/personal-world-model/issues/16), especially Implementation Decisions; see also [GLOSSARY.md](../../GLOSSARY.md) for the defined contracts and vocabulary.
 [^2]: [Graphiti `EntityEdge` source](https://github.com/getzep/graphiti/blob/main/graphiti_core/edges.py), fields and persistence behavior for facts, episodes, embeddings, and temporal timestamps.
 [^3]: [Graphiti Overview](https://help.getzep.com/graphiti/getting-started/overview), temporal context graphs, episodic processing, custom types, hybrid retrieval, and supported backends.
 [^4]: [Graphiti: Adding Episodes](https://help.getzep.com/graphiti/core-concepts/adding-episodes), episode types, point-in-time provenance, and incremental/bulk ingestion behavior.
