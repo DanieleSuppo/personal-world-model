@@ -187,8 +187,17 @@ The initial product is not intended to be:
 
 ## Status
 
-Product discovery has reached the point where the product thesis, first user, initial wedge, major trust boundaries, acquisition model, and consumption model are sufficiently clear to move into product specification and architecture work.
+**Discovery, Wayfinder decision work and initial technical SPEC are delivered; implementation has not started (2026-10-26).** The product thesis remains in [docs/PRD.md](docs/PRD.md). [Wayfinder map #1](https://github.com/DanieleSuppo/personal-world-model/issues/1) and decisions #2-#15 are closed. [SPEC issue #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) remains open as the implementation parent, with 14 open implementation tickets #17-#30. There is no product runtime or completed cross-AI integration.
 
-Implementation details such as batching, reprocessing windows, delta handling, storage representation, model routing, confidential-compute design, exact MCP/API contracts, and evaluation mechanics are intentionally deferred to the next phase.
+The technical SPEC resolves the canonical API, Signal/Model Assertion and Context Bundle contracts, PostgreSQL authoritative ledger direction, purpose-mediated serving, initial ChatGPT export and Calendar sources, ChatGPT MCP and Anthropic consumer, managed key boundary and portable self-hosted export. These are **specified choices, not shipped capabilities**.
 
-See [`docs/PRD.md`](docs/PRD.md) for the consolidated product requirements.
+**Immediate unblocked ticket:** [#17, canonical Signal intake and receipt contract](https://github.com/DanieleSuppo/personal-world-model/issues/17). Keep the cross-AI continuity path visible through implementation; do not add a generic memory framework as a prerequisite.
+
+## Development workflow and next handoff (2026-10-26)
+
+Use the installed Matt Pocock skills and existing GitHub Issues tracker ([AGENTS.md](AGENTS.md), [issue-tracker configuration](docs/agents/issue-tracker.md), [domain guidance](docs/agents/domain.md)). The [PRD](docs/PRD.md) defines the product; [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and its GitHub tickets define the current implementation scope. Do not replace the installed workflow with a project-specific process.
+
+- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> technical SPEC (#16, delivery parent still open) -> implementation tickets (#17-#30).
+- **When a WIP lane is available:** run standard ticket implementation from `/implement #17` if installed, then follow genuine GitHub blocking dependencies. Verify behavior through the canonical API and capture evidence in the ticket.
+- **Proof of product value:** an actual two-consumer context-continuity and controlled-disclosure scenario. MCP, Anthropic, Calendar, security and self-hosting remain requirements until demonstrated.
+- **Scope decisions:** use a concrete ticket and the normal skill workflow to phase delivery rather than quietly dropping PRD invariants or restarting broad discovery.
