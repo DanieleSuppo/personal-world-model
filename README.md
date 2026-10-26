@@ -148,7 +148,7 @@ The desired product model is inspired by user-controlled infrastructure such as 
 - the model should be portable and exportable;
 - the service operator should not have standing access to the user's Personal World Model.
 
-Exactly how to reconcile this requirement with server-side reasoning remains an architectural question. Encryption, key ownership, confidential compute, local compute, and hybrid approaches are design options to evaluate later rather than assumptions embedded in the product definition.
+The subsequent [technical SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) resolves the initial managed/self-hosted trust boundary: managed runtime processing may access only the minimum content needed for an authorized operation, with service-controlled tenant-separated runtime keys and content-blind human support; encrypted portable export and an independent self-hosted deployment are specified. These are design requirements, not proof of deployed cryptography, confidential compute or operational compliance. A particular TEE/confidential-compute implementation remains outside the initial decision.
 
 ## Initial wedge
 
