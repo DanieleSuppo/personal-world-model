@@ -1,6 +1,6 @@
 # Personal World Model — Product Requirements Document
 
-**Status:** Product decisions consolidated 2026-11-11; revised SPEC #16 and replacement implementation tickets #31-#57 published; implementation not started  
+**Status:** Product decisions consolidated 2026-11-11; revised SPEC #16 and replacement implementation tickets #31-#58 published; implementation not started  
 **Project name:** Personal World Model  
 **Repository:** `personal-world-model`  
 **Working product thesis:** *Your context follows you.*
@@ -806,7 +806,7 @@ The following decisions are considered sufficiently stable to guide the next pha
 
 ## 24A. Memory decisions agreed 2026-11-11
 
-These product requirements are reflected in the revised SPEC #16 and replacement tickets #31-#57; none is a shipped capability. No new discovery, benchmarking or research phase is a prerequisite.
+These product requirements are reflected in the revised SPEC #16 and replacement tickets #31-#58; none is a shipped capability. No new discovery, benchmarking or research phase is a prerequisite.
 
 ### Episodic memory
 Preserve meaningful contextualized experiences, events, decisions and outcomes, including relevant time, participants, applicability and lineage when available, alongside generalized knowledge and hypotheses. Episodes must remain retrievable even when no immediate generalization exists. They need neither verbatim transcripts nor a separate database.
@@ -827,7 +827,7 @@ Support a catalogue of user-associated procedures and skills through the canonic
 Use a lightweight ordinary retrieval path and a deeper bounded path for complex or episodic tasks, subject to the same authorization and purpose controls. Context Cards are reusable, compact, topic-oriented derived projections referencing underlying knowledge, episodes and relevant directives, with freshness/version metadata. They are never authoritative; they can be invalidated and regenerated. Context Bundles remain task-specific and can combine cards with current underlying state. A future visual presentation is possible but not part of the current scope.
 
 ### Persistence and delivery
-Keep PostgreSQL as the sole authoritative ledger; cards and indexes are rebuildable projections. Oracle Agent Memory, Hermes and OpenClaw are inspirations, not dependencies. The revised SPEC #16 and replacement tickets #31-#57 govern implementation; historical tickets #17-#30 are superseded. No generic memory framework, benchmark programme or renewed discovery is a prerequisite.
+Keep PostgreSQL as the sole authoritative ledger; cards and indexes are rebuildable projections. Oracle Agent Memory, Hermes and OpenClaw are inspirations, not dependencies. The revised SPEC #16 and replacement tickets #31-#58 govern implementation; historical tickets #17-#30 are superseded. No generic memory framework, benchmark programme or renewed discovery is a prerequisite.
 
 ---
 
@@ -868,4 +868,4 @@ The design should preserve this central product boundary:
 
 > **The Personal World Model's job is to understand and maintain the person independently of any assistant, then make the right part of that understanding available to the right consumer for the right purpose.**
 
-The next step is standard /implement #31 followed by the dependency frontier in #31-#57, culminating in the actual cross-AI integration path #54. Broad product discovery and ticket alignment are complete.
+The next step is standard /implement #31 followed by the dependency frontier in #31-#58, culminating in the actual cross-AI integration path #54. Broad product discovery and ticket alignment are complete.
