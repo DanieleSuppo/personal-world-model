@@ -113,11 +113,14 @@ The project currently distinguishes conceptually between:
 - **observations** — potentially meaningful things recognized by the system;
 - **candidate interpretations** — temporary reasoning, which may remain uncertain;
 - **personal knowledge** — sufficiently reliable conclusions represented in the model;
-- **high-confidence hypotheses** — strong but not factual conclusions that remain explicitly distinct from knowledge.
+- **high-confidence hypotheses** — strong but not factual conclusions that remain explicitly distinct from knowledge;
+- **Episodes** — contextualized experiences, events, decisions and outcomes that need not imply a generalized assertion;
+- **Personal Directives** — attributable explicit user instructions, distinct from inferred preferences and subject to scope, correction and optional expiry;
+- **Disclosure Ledger** — durable record of which versioned information was delivered to each Consumer, including lineage that prevents agent echoes from becoming independent evidence.
 
 Knowledge may later be reinforced, weakened, contextualized, corrected, or superseded as the person and their circumstances change.
 
-The system should retain enough compact lineage and selected excerpts to allow future reassessment, but it is not intended to become a forensic archive or a duplicate store of every email, conversation, or source document.
+The system retains contextual Episodes, compact lineage and selected excerpts for later reassessment. All conversation material actually acquired, whether full transcript, excerpt or summary, remains durably available until successful Dreaming for its covered revision. The model never claims to possess conversation portions it did not receive and is not a permanent duplicate archive of every source.
 
 Disconnecting a source stops future learning from that source; it does not automatically erase what the system has already learned.
 
@@ -189,11 +192,11 @@ The initial product is not intended to be:
 
 The Personal World Model retains meaningful **episodic memory** (experiences, events, decisions and outcomes) alongside evolving Personal Knowledge and explicitly qualified hypotheses. It also distinguishes **Personal Directives** from inferred preferences and ordinary facts: a receiving harness decides whether and how to apply a user-origin Directive; the Personal World Model never claims system-instruction authority.
 
-Acquired conversations remain durably available **in full until successful, durable Dreaming/consolidation**. A failed or partial attempt cannot authorize ordinary raw cleanup. Subsequent retention follows privacy/deletion policy, preserving useful episodes, observations and lineage. Dreaming complements incremental learning and supports bounded reassessment.
+Acquired conversations remain durably available **as actually received until successful, durable Dreaming/consolidation**. A failed or partial attempt cannot authorize ordinary raw cleanup. Subsequent retention follows privacy/deletion policy, preserving useful episodes, observations and lineage. Dreaming complements incremental learning and supports bounded reassessment.
 
 A **Disclosure Ledger** records which versioned information was supplied to which Consumer, when and for what purpose. An agent repeating information previously received from the model does not provide independent corroboration; explicit new user evidence is treated separately where provenance supports it.
 
-The Context Serving Engine can use lightweight or deeper bounded episodic retrieval. **Context Cards** are compact, reusable, topic-oriented **derived projections**, not authoritative memory; they can be invalidated and regenerated, and never bypass per-request purpose and sensitivity checks. They may have a visual representation in the future, but none is required now.
+The Context Serving Engine can use lightweight or deeper bounded episodic retrieval independently of Context Cards. **Context Cards** are compact, reusable, topic-oriented **derived projections**, not authoritative memory; they can be invalidated and regenerated, and never bypass per-request purpose and sensitivity checks. They may have a visual representation in the future, but none is required now.
 
 A user-associated **skill/procedure catalogue** is discoverable through the canonical API and compatible adapters, including MCP where supported. This does not install or execute skills automatically. PostgreSQL remains the sole authoritative ledger, with rebuildable retrieval and Context Card projections. The complete product contracts are in [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and [PRD](docs/PRD.md).
 
@@ -201,7 +204,7 @@ A user-associated **skill/procedure catalogue** is discoverable through the cano
 
 **Discovery, Wayfinder and the revised technical SPEC are delivered; implementation has not started (2026-11-11).** [Wayfinder map #1](https://github.com/DanieleSuppo/personal-world-model/issues/1) and decisions #2-#15 are closed. [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) remains open as the implementation parent.
 
-The original implementation issues **#17-#30 were closed as superseded**, not completed. The approved Matt Pocock `to-tickets` workflow produced **24 replacement tracer-bullet tickets #31-#54**, with acceptance criteria and blocking references. These are planned work, not shipped features. There is no product runtime or demonstrated cross-AI integration yet.
+The original implementation issues **#17-#30 were closed as superseded**, not completed. The approved Matt Pocock `to-tickets` workflow produced **27 replacement/refinement tracer-bullet tickets #31-#57**, with acceptance criteria and blocking references. These are planned work, not shipped features. There is no product runtime or demonstrated cross-AI integration yet.
 
 The revised specification covers canonical Signals, episodic and semantic records, durable Dreaming, disclosure lineage, Directives, derived Context Cards, skill discovery, privacy mediation, ChatGPT MCP, Anthropic, ChatGPT export, Calendar, managed trust, encrypted portability and independent self-hosting.
 
@@ -209,9 +212,9 @@ The revised specification covers canonical Signals, episodic and semantic record
 
 ## Development workflow and next handoff (2026-11-11)
 
-Use the installed Matt Pocock skills and this repository's GitHub Issues tracker ([AGENTS.md](AGENTS.md), [issue-tracker configuration](docs/agents/issue-tracker.md), [domain guidance](docs/agents/domain.md)). The [PRD](docs/PRD.md) defines product intent; [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and issues #31-#54 define the current implementation scope. Follow the installed skills' standard workflow; this handoff is not a replacement.
+Use the installed Matt Pocock skills and this repository's GitHub Issues tracker ([AGENTS.md](AGENTS.md), [issue-tracker configuration](docs/agents/issue-tracker.md), [domain guidance](docs/agents/domain.md)). The [PRD](docs/PRD.md) defines product intent; [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and issues #31-#57 define the current implementation scope. Follow the installed skills' standard workflow; this handoff is not a replacement.
 
-- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> revised SPEC #16 -> approved `to-tickets` (#31-#54 published).
+- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> revised SPEC #16 -> approved `to-tickets` (#31-#54 published, refined into #55-#57 for single-session scope).
 - **Next when a WIP lane is available:** run standard `/implement #31`, then follow genuine blocking dependencies recorded in each issue. Verify each tracer-bullet behavior at the canonical API seam.
 - **Product milestone:** actual two-consumer continuity, episodic recall, corrected Directives, Dreaming, non-independent echo handling and controlled disclosure (#54).
 - **Boundaries:** no generic memory framework, extra research or benchmark programme as prerequisites. MCP, Anthropic, Calendar, managed trust and self-hosting remain specified until implemented and demonstrated.
