@@ -1,6 +1,6 @@
 # Personal World Model — Product Requirements Document
 
-**Status:** Discovery consolidated; ready for specification/design exploration  
+**Status:** Product decisions updated 2026-11-11; SPEC #16 and tickets require alignment  
 **Project name:** Personal World Model  
 **Repository:** `personal-world-model`  
 **Working product thesis:** *Your context follows you.*
@@ -335,7 +335,7 @@ This may include:
 - the relationship between observations and resulting knowledge;
 - indications of reinforcement, contradiction, or change.
 
-The system should avoid obsessively duplicating complete emails, entire AI histories, documents, or every intermediate observation when a compact representation is sufficient.
+The system must retain each acquired conversation in full until a successful durable Dreaming/consolidation outcome. After that, raw retention follows explicit policy, while meaningful episodes, selected excerpts, observations and lineage remain available for reassessment. It is not intended as a permanent duplicate archive of every source.
 
 However, consolidation must not prevent later reassessment. New evidence may make old signals meaningful in ways that were not apparent when those signals first arrived.
 
@@ -797,12 +797,39 @@ The following decisions are considered sufficiently stable to guide the next pha
 15. **Consumer authorization is persistent but purpose/relevance/sensitivity policy is evaluated per request.**
 16. **Correction is conversational semantic reassessment, not manual memory CRUD.**
 17. **Disconnecting a source does not automatically erase already learned knowledge.**
-18. **The product is not a complete raw-data vault.**
-19. **Enough compact evidence/lineage should remain internally to support later reassessment without obsessively storing every source item.**
+18. **The product is not a permanent raw-data vault; acquired conversations remain intact until successful durable consolidation, subject to explicit deletion/privacy obligations.**
+19. **Meaningful episodic history and compact evidence/lineage survive consolidation; complete conversations remain available until successful durable Dreaming, then follow retention policy.**
 20. **Managed hosting is the default product path; self-hosting is a first-class alternative.**
 21. **The service operator should not have standing access to the Personal World Model.**
 22. **No API keys should be required from ordinary managed-service users.**
 23. **Processing frequency may scale with plans; product quality should not rely on the consumer's chosen LLM.**
+
+---
+
+## 24A. Memory decisions agreed 2026-11-11
+
+These are product requirements to reconcile with SPEC #16 and existing tickets, not shipped capabilities. No new discovery, benchmarking or research phase is a prerequisite.
+
+### Episodic memory
+Preserve meaningful contextualized experiences, events, decisions and outcomes, including relevant time, participants, applicability and lineage when available, alongside generalized knowledge and hypotheses. Episodes must remain retrievable even when no immediate generalization exists. They need neither verbatim transcripts nor a separate database.
+
+### Conversation retention and Dreaming
+Persist every acquired conversation in full until an asynchronous Dreaming/consolidation process has completed successfully and durably committed its outcome. A receipt, attempted extraction or partial processing does not authorize raw cleanup. After success, preserve relevant episodes, observations, selected excerpts and lineage; raw material follows explicit retention policy. User deletion and legal/privacy obligations override ordinary retention. Incremental learning before consolidation remains possible with appropriate status. Dreaming deduplicates, relates, consolidates and revisits knowledge, including bounded targeted reassessment; it must not turn uncertain interpretations into facts.
+
+### Disclosure lineage and independent evidence
+Record what Personal World Model communicated to whom, when and for what purpose, including Consumer identity, Context Bundle/response identifier and disclosed item identities and versions. This records disclosure, not compliance by the Consumer. If a Consumer repeats information previously provided by the model, that echo is not independent evidence. Repetition from the same origin cannot inflate support. Explicit new user confirmation may be independent, but user-originated statements must be distinguished from agent restatements wherever observable. Unknown lineage is not presumed independent.
+
+### Personal Directives and procedural knowledge
+Separate factual knowledge, inferred preferences, explicit user Directives and agent procedures/skills. An inferred habit or preference must never silently become a Directive. Directives carry explicit user origin, scope, temporal status, correction and supersession. The Context Serving Engine returns applicable Directives as such; the receiving harness decides whether and how to use them and handles conflicts with its own rules and capabilities. Personal World Model neither enforces behavior nor claims instruction precedence over the harness. User-preferred procedures may be remembered without turning Personal World Model into an agent runtime.
+
+### Skill discovery
+Support a catalogue of user-associated procedures and skills through the canonical API with purpose and disclosure checks. Compatible harnesses may discover/retrieve these through an MCP adapter; native Agent Skills artifacts or references may be provided by an adapter when supported. Neither protocol guarantees automatic installation or execution. Do not silently turn conversation-derived knowledge into executable or installable skills.
+
+### Adaptive retrieval and Context Cards
+Use a lightweight ordinary retrieval path and a deeper bounded path for complex or episodic tasks, subject to the same authorization and purpose controls. Context Cards are reusable, compact, topic-oriented derived projections referencing underlying knowledge, episodes and relevant directives, with freshness/version metadata. They are never authoritative; they can be invalidated and regenerated. Context Bundles remain task-specific and can combine cards with current underlying state. A future visual presentation is possible but not part of the current scope.
+
+### Persistence and delivery
+Keep PostgreSQL as the sole authoritative ledger; cards and indexes are rebuildable projections. Oracle Agent Memory, Hermes and OpenClaw are inspirations, not dependencies. Preserve existing semantic commit, privacy, portability, managed/self-hosted and cross-AI boundaries. Align SPEC #16, then existing tickets, then README and portfolio roadmap. Add tickets only for concrete implementation dependencies, without reopening discovery or creating a generic memory framework.
 
 ---
 
@@ -845,4 +872,4 @@ The design should preserve this central product boundary:
 
 > **The Personal World Model's job is to understand and maintain the person independently of any assistant, then make the right part of that understanding available to the right consumer for the right purpose.**
 
-The next step is specification and architecture exploration, not further broad product ideation.
+The next step is to align the existing SPEC #16 and implementation tickets with these decisions, then deliver the established cross-AI vertical slice. Broad product discovery is complete.
