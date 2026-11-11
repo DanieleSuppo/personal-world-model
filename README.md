@@ -185,19 +185,33 @@ The initial product is not intended to be:
 - a system that trusts third-party consumer LLMs to update authoritative personal knowledge;
 - a system that exposes the entire personal model to every connected consumer.
 
+## Memory architecture (decisions 2026-11-11)
+
+The Personal World Model retains meaningful **episodic memory** (experiences, events, decisions and outcomes) alongside evolving Personal Knowledge and explicitly qualified hypotheses. It also distinguishes **Personal Directives** from inferred preferences and ordinary facts: a receiving harness decides whether and how to apply a user-origin Directive; the Personal World Model never claims system-instruction authority.
+
+Acquired conversations remain durably available **in full until successful, durable Dreaming/consolidation**. A failed or partial attempt cannot authorize ordinary raw cleanup. Subsequent retention follows privacy/deletion policy, preserving useful episodes, observations and lineage. Dreaming complements incremental learning and supports bounded reassessment.
+
+A **Disclosure Ledger** records which versioned information was supplied to which Consumer, when and for what purpose. An agent repeating information previously received from the model does not provide independent corroboration; explicit new user evidence is treated separately where provenance supports it.
+
+The Context Serving Engine can use lightweight or deeper bounded episodic retrieval. **Context Cards** are compact, reusable, topic-oriented **derived projections**, not authoritative memory; they can be invalidated and regenerated, and never bypass per-request purpose and sensitivity checks. They may have a visual representation in the future, but none is required now.
+
+A user-associated **skill/procedure catalogue** is discoverable through the canonical API and compatible adapters, including MCP where supported. This does not install or execute skills automatically. PostgreSQL remains the sole authoritative ledger, with rebuildable retrieval and Context Card projections. The complete product contracts are in [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and [PRD](docs/PRD.md).
+
 ## Status
 
-**Discovery, Wayfinder decision work and initial technical SPEC are delivered; implementation has not started (2026-10-26).** The product thesis remains in [docs/PRD.md](docs/PRD.md). [Wayfinder map #1](https://github.com/DanieleSuppo/personal-world-model/issues/1) and decisions #2-#15 are closed. [SPEC issue #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) remains open as the implementation parent, with 14 open implementation tickets #17-#30. There is no product runtime or completed cross-AI integration.
+**Discovery, Wayfinder and the revised technical SPEC are delivered; implementation has not started (2026-11-11).** [Wayfinder map #1](https://github.com/DanieleSuppo/personal-world-model/issues/1) and decisions #2-#15 are closed. [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) remains open as the implementation parent.
 
-The technical SPEC resolves the canonical API, Signal/Model Assertion and Context Bundle contracts, PostgreSQL authoritative ledger direction, purpose-mediated serving, initial ChatGPT export and Calendar sources, ChatGPT MCP and Anthropic consumer, managed key boundary and portable self-hosted export. These are **specified choices, not shipped capabilities**.
+The original implementation issues **#17-#30 were closed as superseded**, not completed. The approved Matt Pocock `to-tickets` workflow produced **24 replacement tracer-bullet tickets #31-#54**, with acceptance criteria and blocking references. These are planned work, not shipped features. There is no product runtime or demonstrated cross-AI integration yet.
 
-**Immediate unblocked ticket:** [#17, canonical Signal intake and receipt contract](https://github.com/DanieleSuppo/personal-world-model/issues/17). Keep the cross-AI continuity path visible through implementation; do not add a generic memory framework as a prerequisite.
+The revised specification covers canonical Signals, episodic and semantic records, durable Dreaming, disclosure lineage, Directives, derived Context Cards, skill discovery, privacy mediation, ChatGPT MCP, Anthropic, ChatGPT export, Calendar, managed trust, encrypted portability and independent self-hosting.
 
-## Development workflow and next handoff (2026-10-26)
+**Immediate unblocked ticket:** [#31, Receive idempotent Signals with explicit origin and receipts](https://github.com/DanieleSuppo/personal-world-model/issues/31). The final integrated contract milestone is [#54](https://github.com/DanieleSuppo/personal-world-model/issues/54).
 
-Use the installed Matt Pocock skills and existing GitHub Issues tracker ([AGENTS.md](AGENTS.md), [issue-tracker configuration](docs/agents/issue-tracker.md), [domain guidance](docs/agents/domain.md)). The [PRD](docs/PRD.md) defines the product; [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and its GitHub tickets define the current implementation scope. Do not replace the installed workflow with a project-specific process.
+## Development workflow and next handoff (2026-11-11)
 
-- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> technical SPEC (#16, delivery parent still open) -> implementation tickets (#17-#30).
-- **When a WIP lane is available:** run standard ticket implementation from `/implement #17` if installed, then follow genuine GitHub blocking dependencies. Verify behavior through the canonical API and capture evidence in the ticket.
-- **Proof of product value:** an actual two-consumer context-continuity and controlled-disclosure scenario. MCP, Anthropic, Calendar, security and self-hosting remain requirements until demonstrated.
-- **Scope decisions:** use a concrete ticket and the normal skill workflow to phase delivery rather than quietly dropping PRD invariants or restarting broad discovery.
+Use the installed Matt Pocock skills and this repository's GitHub Issues tracker ([AGENTS.md](AGENTS.md), [issue-tracker configuration](docs/agents/issue-tracker.md), [domain guidance](docs/agents/domain.md)). The [PRD](docs/PRD.md) defines product intent; [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and issues #31-#54 define the current implementation scope. Follow the installed skills' standard workflow; this handoff is not a replacement.
+
+- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> revised SPEC #16 -> approved `to-tickets` (#31-#54 published).
+- **Next when a WIP lane is available:** run standard `/implement #31`, then follow genuine blocking dependencies recorded in each issue. Verify each tracer-bullet behavior at the canonical API seam.
+- **Product milestone:** actual two-consumer continuity, episodic recall, corrected Directives, Dreaming, non-independent echo handling and controlled disclosure (#54).
+- **Boundaries:** no generic memory framework, extra research or benchmark programme as prerequisites. MCP, Anthropic, Calendar, managed trust and self-hosting remain specified until implemented and demonstrated.
