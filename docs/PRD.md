@@ -335,11 +335,11 @@ This may include:
 - the relationship between observations and resulting knowledge;
 - indications of reinforcement, contradiction, or change.
 
-The system must retain each acquired conversation in full until a successful durable Dreaming/consolidation outcome. After that, raw retention follows explicit policy, while meaningful episodes, selected excerpts, observations and lineage remain available for reassessment. It is not intended as a permanent duplicate archive of every source.
+The system must retain all conversation material actually received, preserving whether it is a full transcript, excerpt or summary, until a successful durable Dreaming/consolidation outcome. After that, raw retention follows explicit policy, while meaningful episodes, selected excerpts, observations and lineage remain available for reassessment. It is not intended as a permanent duplicate archive of every source.
 
 However, consolidation must not prevent later reassessment. New evidence may make old signals meaningful in ways that were not apparent when those signals first arrived.
 
-The SPEC defines the authoritative ledger and consolidation boundary; implementation chooses bounded storage and retrieval mechanisms without changing the requirement to retain each actually acquired conversation in full until durable consolidation.
+The SPEC defines the authoritative ledger and consolidation boundary; implementation chooses bounded storage and retrieval mechanisms without changing the requirement to retain all actually acquired conversation material until durable consolidation.
 
 ---
 
@@ -572,7 +572,7 @@ The current target is:
 
 > **The service operator should not have standing access to the user's Personal World Model.**
 
-The exact technical mechanism remains open because the system must perform inference and retrieval over personal knowledge, unlike a passive encrypted vault.
+The revised SPEC #16 selects managed runtime processing with service-controlled tenant-separated keys, purpose-bound processing and content-blind human support. The service must perform authorized inference and retrieval, so this is not a zero-knowledge design.
 
 ### 16.2 Deployment model
 
@@ -589,17 +589,7 @@ Open-source or source-visible distribution is a strong hypothesis to evaluate, n
 
 Persistent storage and active reasoning are separate trust problems.
 
-Potential approaches to evaluate later include:
-
-- user-controlled encryption keys;
-- encrypted cloud state;
-- local compute;
-- confidential compute / trusted execution environments;
-- hybrid compute;
-- self-hosted inference;
-- configurable local/open-weight models for self-hosted installations.
-
-The PRD deliberately does not claim Bitwarden-style zero knowledge until an architecture can genuinely support that promise while still performing required reasoning.
+The managed deployment uses tenant-separated runtime key custody, while a portable export is encrypted with a user-controlled passphrase. A self-hosted deployment operates independently and owns its own keys, storage and model-provider choices. Confidential compute and a specific TEE remain outside the MVP. The product does not claim zero knowledge.
 
 ---
 
