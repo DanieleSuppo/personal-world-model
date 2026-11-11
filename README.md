@@ -204,7 +204,7 @@ A user-associated **skill/procedure catalogue** is discoverable through the cano
 
 **Discovery, Wayfinder and the revised technical SPEC are delivered; implementation has not started (2026-11-11).** [Wayfinder map #1](https://github.com/DanieleSuppo/personal-world-model/issues/1) and decisions #2-#15 are closed. [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) remains open as the implementation parent.
 
-The original implementation issues **#17-#30 were closed as superseded**, not completed. The approved Matt Pocock `to-tickets` workflow produced **27 replacement/refinement tracer-bullet tickets #31-#57**, with acceptance criteria and blocking references. These are planned work, not shipped features. There is no product runtime or demonstrated cross-AI integration yet.
+The original implementation issues **#17-#30 were closed as superseded**, not completed. The approved Matt Pocock `to-tickets` workflow produced **28 replacement/refinement tracer-bullet tickets #31-#58**, with acceptance criteria and blocking references. These are planned work, not shipped features. There is no product runtime or demonstrated cross-AI integration yet.
 
 The revised specification covers canonical Signals, episodic and semantic records, durable Dreaming, disclosure lineage, Directives, derived Context Cards, skill discovery, privacy mediation, ChatGPT MCP, Anthropic, ChatGPT export, Calendar, managed trust, encrypted portability and independent self-hosting.
 
@@ -212,9 +212,9 @@ The revised specification covers canonical Signals, episodic and semantic record
 
 ## Development workflow and next handoff (2026-11-11)
 
-Use the installed Matt Pocock skills and this repository's GitHub Issues tracker ([AGENTS.md](AGENTS.md), [issue-tracker configuration](docs/agents/issue-tracker.md), [domain guidance](docs/agents/domain.md)). The [PRD](docs/PRD.md) defines product intent; [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and issues #31-#57 define the current implementation scope. Follow the installed skills' standard workflow; this handoff is not a replacement.
+Use the installed Matt Pocock skills and this repository's GitHub Issues tracker ([AGENTS.md](AGENTS.md), [issue-tracker configuration](docs/agents/issue-tracker.md), [domain guidance](docs/agents/domain.md)). The [PRD](docs/PRD.md) defines product intent; [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and issues #31-#58 define the current implementation scope. Follow the installed skills' standard workflow; this handoff is not a replacement.
 
-- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> revised SPEC #16 -> approved `to-tickets` (#31-#54 published, refined into #55-#57 for single-session scope).
+- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> revised SPEC #16 -> approved `to-tickets` (#31-#54 published, refined into #55-#58 for single-session scope).
 - **Next when a WIP lane is available:** run standard `/implement #31`, then follow genuine blocking dependencies recorded in each issue. Verify each tracer-bullet behavior at the canonical API seam.
 - **Product milestone:** actual two-consumer continuity, episodic recall, corrected Directives, Dreaming, non-independent echo handling and controlled disclosure (#54).
 - **Boundaries:** no generic memory framework, extra research or benchmark programme as prerequisites. MCP, Anthropic, Calendar, managed trust and self-hosting remain specified until implemented and demonstrated.
