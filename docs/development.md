@@ -135,9 +135,12 @@ The operational vocabulary is `accepted`, `deferred`, `reassessing`, `committed`
 | 409 | `idempotency_conflict` | Key or revision conflicts with accepted input |
 | 413 | `payload_too_large` | Request exceeds the byte limit |
 | 415 | `unsupported_media_type` | Content type is not JSON |
-| 503 | `storage_unavailable` | Storage operation could not be confirmed |
+| 500 | `internal_error` | Unexpected application, schema or configuration fault |
+| 503 | `storage_unavailable` | Recognized storage connectivity or transient database failure |
 
-After a network failure or 503, retry the **same** idempotency key: a lost response may follow a committed transaction. Do not assume a storage error proves the Signal was not stored.
+After a network failure or 503, retry the **same** idempotency key: a lost response may follow a committed transaction. Do not assume an error proves the Signal was not stored. A 500 is not an invitation to retry indefinitely: investigate the application, schema or configuration first, then reuse the original key after fixing the fault.
+
+Recognized connectivity/system errors and transient PostgreSQL SQLSTATE codes map to 503. The installed driver's known uncoded connection/timeout failures are recognized by exact message; other unknown failures map to 500. Internal faults emit a static, content-free diagnostic. Neither response bodies nor this diagnostic expose raw exceptions, database queries, credentials or personal content.
 
 ## Storage, concurrency and migrations
 

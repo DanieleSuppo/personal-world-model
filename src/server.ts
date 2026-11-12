@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Pool } from "pg";
 import { principalsSchema, signalSchema } from "./contracts.js";
-import { getReceipt, SignalConflict, submitSignal } from "./signals.js";
+import { getReceipt, isStorageUnavailable, SignalConflict, submitSignal } from "./signals.js";
 
 class RequestError extends Error {
   constructor(readonly status: number, readonly code: string) {
@@ -87,8 +87,11 @@ export function createSignalServer(options: { pool: Pool; principals: unknown })
         send(response, 409, { state: "rejected", code: "idempotency_conflict" });
       } else if (error instanceof RequestError) {
         send(response, error.status, { state: "rejected", code: error.code });
-      } else {
+      } else if (isStorageUnavailable(error)) {
         send(response, 503, { state: "rejected", code: "storage_unavailable" });
+      } else {
+        console.error("Signal API internal error; check application configuration and schema.");
+        send(response, 500, { state: "rejected", code: "internal_error" });
       }
     }
   });

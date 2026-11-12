@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
+import { createServer as createTcpServer } from "node:net";
 import { Pool } from "pg";
 import { migrate } from "../src/migrate.js";
 import { createSignalServer } from "../src/server.js";
@@ -24,20 +25,18 @@ const databaseOptions = {
     "postgres://pwm_test:local-test-only@127.0.0.1:55432/pwm_test",
 };
 const pool = new Pool(databaseOptions);
-const server = createSignalServer({ pool, principals });
+let server: Awaited<ReturnType<typeof startServer>>;
 let baseUrl: string;
 
 before(async () => {
   await pool.query(`CREATE SCHEMA "${schema}"`);
   await migrate(pool);
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  assert(address && typeof address !== "string");
-  baseUrl = `http://127.0.0.1:${address.port}`;
+  server = await startServer(pool);
+  baseUrl = server.url;
 });
 
 after(async () => {
-  await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  await server?.stop();
   await pool.query(`DROP SCHEMA "${schema}" CASCADE`);
   await pool.end();
 });
@@ -54,19 +53,40 @@ function signal(overrides: Partial<Signal> = {}): Signal {
   };
 }
 
-async function independentInstance() {
-  const independentPool = new Pool(databaseOptions);
-  const http = createSignalServer({ pool: independentPool, principals });
-  await new Promise<void>(resolve => http.listen(0, "127.0.0.1", resolve));
+async function startServer(database: Pool) {
+  const http = createSignalServer({ pool: database, principals });
+  await new Promise<void>((resolve, reject) => {
+    http.once("error", reject);
+    http.listen(0, "127.0.0.1", resolve);
+  });
   const address = http.address();
   assert(address && typeof address !== "string");
   return {
     url: `http://127.0.0.1:${address.port}`,
     async stop() {
       await new Promise<void>((resolve, reject) => http.close(error => error ? reject(error) : resolve()));
-      await independentPool.end();
     },
   };
+}
+
+async function independentInstance() {
+  const independentPool = new Pool(databaseOptions);
+  try {
+    const instance = await startServer(independentPool);
+    return {
+      url: instance.url,
+      async stop() {
+        try {
+          await instance.stop();
+        } finally {
+          await independentPool.end();
+        }
+      },
+    };
+  } catch (error) {
+    await independentPool.end();
+    throw error;
+  }
 }
 
 function submit(input: unknown, credential = token, url = baseUrl) {
@@ -346,20 +366,67 @@ test("the HTTP boundary rejects malformed, non-UTF8, non-JSON and oversized requ
   assert.equal((await submit(signal())).status, 202);
 });
 
-test("database failure returns no success receipt or private driver details", async () => {
+test("closed-pool misuse is an internal fault, not a retryable storage outage", async () => {
   const unavailablePool = new Pool({ ...databaseOptions, connectionTimeoutMillis: 100 });
   await unavailablePool.end();
-  const http = createSignalServer({ pool: unavailablePool, principals });
-  await new Promise<void>(resolve => http.listen(0, "127.0.0.1", resolve));
-  const address = http.address();
-  assert(address && typeof address !== "string");
+  const instance = await startServer(unavailablePool);
   const input = signal();
   try {
-    const response = await submit(input, token, `http://127.0.0.1:${address.port}`);
-    assert.equal(response.status, 503);
-    assert.deepEqual(await response.json(), { state: "rejected", code: "storage_unavailable" });
+    const response = await submit(input, token, instance.url);
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), { state: "rejected", code: "internal_error" });
     assert.equal((await submit(input)).status, 202);
   } finally {
-    await new Promise<void>((resolve, reject) => http.close(error => error ? reject(error) : resolve()));
+    await instance.stop();
+  }
+});
+
+test("deterministic schema faults return a content-blind internal error for reads and writes", async () => {
+  const unconfiguredPool = new Pool({ ...databaseOptions, options: `-c search_path=missing_${randomBytes(12).toString("hex")}` });
+  const instance = await startServer(unconfiguredPool);
+  try {
+    const requests = [
+      await submit(signal(), token, instance.url),
+      await fetch(instance.url + "/v1/signal-receipts/" + randomUUID(), {
+        headers: { authorization: `Bearer ${token}` },
+      }),
+    ];
+    for (const response of requests) {
+      assert.equal(response.status, 500);
+      assert.deepEqual(await response.json(), { state: "rejected", code: "internal_error" });
+    }
+  } finally {
+    await instance.stop();
+    await unconfiguredPool.end();
+  }
+});
+
+test("real storage connection loss remains retryable without exposing driver details", async () => {
+  const disconnectingPeer = createTcpServer(socket => socket.destroy());
+  await new Promise<void>(resolve => disconnectingPeer.listen(0, "127.0.0.1", resolve));
+  const address = disconnectingPeer.address();
+  assert(address && typeof address !== "string");
+  const url = new URL(databaseOptions.connectionString);
+  url.hostname = "127.0.0.1";
+  url.port = String(address.port);
+  const disconnectedPool = new Pool({ connectionString: url.toString(), connectionTimeoutMillis: 1000 });
+  const instance = await startServer(disconnectedPool);
+  try {
+    const input = signal();
+    const requests = [
+      await submit(input, token, instance.url),
+      await fetch(instance.url + "/v1/signal-receipts/" + randomUUID(), {
+        headers: { authorization: `Bearer ${token}` },
+      }),
+    ];
+    for (const response of requests) {
+      assert.equal(response.status, 503);
+      assert.deepEqual(await response.json(), { state: "rejected", code: "storage_unavailable" });
+    }
+    assert.equal((await submit(input)).status, 202);
+  } finally {
+    await instance.stop();
+    await disconnectedPool.end();
+    await new Promise<void>((resolve, reject) => disconnectingPeer.close(error => error ? reject(error) : resolve()));
   }
 });

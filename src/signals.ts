@@ -4,6 +4,34 @@ import type { Principal, Receipt, Signal } from "./contracts.js";
 
 export class SignalConflict extends Error {}
 
+// pg uses SQLSTATE/system codes where available, but some connection and timeout
+// failures are plain Errors. Keep their fallback messages exact: unknown faults
+// must not become retryable outages simply because they mention a database.
+export function isStorageUnavailable(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const code = "code" in error ? error.code : undefined;
+  if (typeof code === "string") {
+    return /^(08|53)[0-9A-Z]{3}$/.test(code) || [
+      "40001", "40P01", "55P03", "57014", "57P01", "57P02", "57P03",
+      "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT", "EHOSTUNREACH", "ENETUNREACH",
+      "EPIPE", "ENOTFOUND", "EAI_AGAIN",
+    ].includes(code);
+  }
+  return [
+    "Connection terminated",
+    "Connection terminated unexpectedly",
+    "Connection terminated due to connection timeout",
+    "timeout exceeded when trying to connect",
+    "timeout expired",
+    "Query read timeout",
+    "Client has encountered a connection error and is not queryable",
+  ].includes(error.message);
+}
+
+function principalScope(principal: Principal): [tenantId: string, originType: Principal["origin"]["type"], originId: string] {
+  return [principal.tenantId, principal.origin.type, principal.origin.id];
+}
+
 type SignalRow = {
   receipt_id: string;
   content: string;
@@ -44,7 +72,7 @@ function receipt(row: SignalRow): Receipt {
 
 export async function submitSignal(pool: Pool, principal: Principal, signal: Signal): Promise<Receipt> {
   const client = await pool.connect();
-  const scope = [principal.tenantId, principal.origin.type, principal.origin.id];
+  const scope = principalScope(principal);
   try {
     await client.query("BEGIN");
     await client.query("SET LOCAL statement_timeout = '10s'");
@@ -101,7 +129,7 @@ export async function getReceipt(pool: Pool, principal: Principal, id: string): 
     `SELECT receipt_id, origin_type, origin_id, fidelity, source_item_id,
       source_revision, source_cursor, state, received_at
       FROM signals WHERE receipt_id = $1 AND tenant_id = $2 AND origin_type = $3 AND origin_id = $4`,
-    [id, principal.tenantId, principal.origin.type, principal.origin.id],
+    [id, ...principalScope(principal)],
   );
   return result.rows[0] ? receipt(result.rows[0]) : undefined;
 }
