@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
 import { Pool } from "pg";
 import { migrate } from "../src/migrate.js";
@@ -270,6 +270,23 @@ test("idempotency and receipt lookup are isolated by tenant and origin", async (
     assert.equal(separate.status, 202);
     assert.notEqual((await separate.json()).receiptId, first.receiptId);
   }
+});
+
+test("a never-issued receipt has the same public not-found response as an inaccessible receipt", async () => {
+  const response = await fetch(baseUrl + "/v1/signal-receipts/" + randomUUID(), {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), { state: "rejected", code: "not_found" });
+});
+
+test("identifier limits count Unicode code points rather than UTF-16 code units", async () => {
+  const id = "🌍".repeat(256);
+  const response = await submit(signal({ sourceItem: { id, revision: "1" } }));
+  assert.equal(response.status, 202);
+  assert.deepEqual((await response.json()).sourceItem, { id, revision: "1" });
+  const tooLong = await submit(signal({ sourceItem: { id: id + "🌍", revision: "1" } }));
+  assert.equal(tooLong.status, 400);
 });
 
 test("unauthenticated and forged-origin submissions are rejected without reserving the key", async () => {

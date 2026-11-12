@@ -26,8 +26,9 @@ Review base: `23eab0802d921c25e410787713ed35eb4a3db7de` (starting HEAD). Include
 - [x] Add local run instructions and explicit API contracts in `docs/development.md`; preserve existing README anchor, update progress without claiming managed production readiness.
 - [x] Add CI for typechecking and API tests against PostgreSQL. Do not add a separate evaluation harness.
 - [x] Run full `npm test`, `npm run typecheck`, `npm run build`, `git diff --check`, and a startup smoke check.
-- [ ] Invoke `code-review`: fresh independent Standards and Spec/security/concurrency reviewers, no implementation delegation. Pin the starting commit and include uncommitted new files in the reviewed patch if not yet committed.
-- [ ] Fix material findings with regression tests, rerun sufficient proof, record review results and verification evidence in #31, and commit work on the current branch. Do not push.
+- [x] Invoke `code-review`: fresh independent Standards and Spec/security/concurrency reviewers, no implementation delegation. Pin the starting commit and include uncommitted new files in the reviewed patch if not yet committed.
+- [x] Address review findings, rerun sufficient proof, and commit work on the current branch. Do not push.
+- Publish review results and verification evidence in #31 after the final commit; close the ticket with local commit references.
 
 ## Execution ledger
 
@@ -35,4 +36,8 @@ Review base: `23eab0802d921c25e410787713ed35eb4a3db7de` (starting HEAD). Include
 - Task 1: first API test failed with 404 instead of 202, then passed after durable intake and lookup were implemented. Typechecking exposed an ES2023 library mismatch for Node's `String.isWellFormed`; the compiler target was corrected to ES2024.
 - Task 2: retry, conflicting-key and revised-item redeliveries each failed before their implementation. PostgreSQL transactions, alias bindings and revision uniqueness made them pass. Additional revision, independent-instance concurrency and restart scenarios passed.
 - Task 3 implementation: 16 canonical API contract tests pass. Typecheck, build, dependency audit and diff checks pass. A compiled-process smoke check verified migrations applied twice, authenticated intake, process restart, durable receipt/retry, graceful shutdown and fail-closed startup.
-- Test isolation refinement: each suite uses its own random PostgreSQL schema, preserving separate test/development databases without global truncation. Bootstrap credentials are local provisioning, not managed account authentication. No implementation was delegated; review remains pending.
+- Test isolation refinement: each suite uses its own random PostgreSQL schema, preserving separate test/development databases without global truncation. Bootstrap credentials are local provisioning, not managed account authentication. No implementation was delegated. Two fresh independent review agents completed Standards and SPEC/security/concurrency reviews of `23eab08...0e9ed1d`.
+- Standards review: no documented-standard violations; two non-blocking heuristic suggestions (scope tuple helper and test server fixture consolidation). Deferred because current ownership is clear and neither changes #31 behavior.
+- SPEC review: no material #31 defects. Added the missing unknown-receipt 404 contract assertion. Independently reproduced Zod's Unicode code-point counting, corrected the published units, and added an astral-character boundary test. Clarified that new revisions need new idempotency keys, matching the approved conflict contract rather than changing behavior.
+- Deferred low-severity diagnostic suggestion: unexpected non-request exceptions currently share the generic `storage_unavailable` response. No broken #31 behavior was reproduced; narrower internal-fault classification remains optional hardening, not a production-readiness claim. Optional 405 method handling is also outside this ticket.
+- Final proof: 18/18 API tests pass, strict typecheck and compiled build pass, `npm audit` reports zero vulnerabilities, `git diff --check` passes, and the AGENTS.md-to-README handoff anchor remains valid. The earlier compiled-process restart smoke also passed.

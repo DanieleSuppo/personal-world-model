@@ -102,8 +102,8 @@ Contract:
 - `origin.type`: `source`, `consumer`, or `user`. It must match the authenticated principal, including `origin.id`.
 - `fidelity`: `raw`, `excerpt`, or `summary`. This describes acquired input; it never grants semantic authority.
 - `idempotencyKey`: required nonempty string. Tenant and origin scope its uniqueness.
-- `content`: required nonempty text, at most 49,152 UTF-16 code units. The entire UTF-8 JSON request must also fit within 65,536 bytes. Content is retained unchanged; no cleanup runs in this slice.
-- `sourceItem`: required for Source origin, optional otherwise. `id` is the stable external identity. `revision` and incremental `cursor` are optional nonempty strings; omit unavailable values instead of sending null. IDs, revisions and keys are limited to 256 code units; cursors to 2,048.
+- `content`: required nonempty text, at most 49,152 Unicode code points. The entire UTF-8 JSON request must also fit within 65,536 bytes. Content is retained unchanged; no cleanup runs in this slice.
+- `sourceItem`: required for Source origin, optional otherwise. `id` is the stable external identity. `revision` and incremental `cursor` are optional nonempty strings; omit unavailable values instead of sending null. IDs, revisions and keys are limited to 256 Unicode code points; cursors to 2,048.
 - All strings must be valid Unicode without NUL characters. Unknown fields are rejected, including tenant selection and attempted semantic writes.
 
 An identical item/revision is a redelivery even with a different key. Such keys become durable aliases for the original receipt. Different content, fidelity, item identity or revision under an already-used key returns 409. Different content or fidelity for an already-known item/revision also returns 409. Conflicts never overwrite the accepted Signal.
