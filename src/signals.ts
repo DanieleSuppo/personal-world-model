@@ -14,7 +14,7 @@ export function isStorageUnavailable(error: unknown): boolean {
     return /^(08|53)[0-9A-Z]{3}$/.test(code) || [
       "40001", "40P01", "55P03", "57014", "57P01", "57P02", "57P03",
       "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT", "EHOSTUNREACH", "ENETUNREACH",
-      "EPIPE", "ENOTFOUND", "EAI_AGAIN",
+      "EPIPE", "ENOTFOUND", "EAI_AGAIN", "ECONNABORTED", "EHOSTDOWN", "ENETDOWN", "EADDRNOTAVAIL",
     ].includes(code);
   }
   return [
@@ -73,6 +73,9 @@ function receipt(row: SignalRow): Receipt {
 export async function submitSignal(pool: Pool, principal: Principal, signal: Signal): Promise<Receipt> {
   const client = await pool.connect();
   const scope = principalScope(principal);
+  let discardClient = false;
+  const connectionFailed = () => { discardClient = true; };
+  client.on("error", connectionFailed);
   try {
     await client.query("BEGIN");
     await client.query("SET LOCAL statement_timeout = '10s'");
@@ -117,10 +120,16 @@ export async function submitSignal(pool: Pool, principal: Principal, signal: Sig
     await client.query("COMMIT");
     return receipt(row);
   } catch (error) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      // Preserve the operation error and never return an unusable connection to the pool.
+      discardClient = true;
+    }
     throw error;
   } finally {
-    client.release();
+    client.release(discardClient);
+    client.off("error", connectionFailed);
   }
 }
 

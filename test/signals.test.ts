@@ -401,6 +401,40 @@ test("deterministic schema faults return a content-blind internal error for read
   }
 });
 
+test("a connection lost during a transaction returns 503 and the same key remains usable", async () => {
+  const failureSchema = "disconnect_" + randomBytes(12).toString("hex");
+  const transactionPool = new Pool({ ...databaseOptions, options: `-c search_path=${failureSchema}` });
+  await transactionPool.query(`CREATE SCHEMA "${failureSchema}"`);
+  await migrate(transactionPool);
+  // Exercise a real backend termination inside intake, including rollback cleanup.
+  await transactionPool.query(`
+    CREATE FUNCTION disconnect_intake() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN
+      PERFORM pg_terminate_backend(pg_backend_pid());
+      RETURN NEW;
+    END;
+    $$;
+    CREATE TRIGGER disconnect_intake BEFORE INSERT ON signals
+      FOR EACH ROW EXECUTE FUNCTION disconnect_intake();
+  `);
+  const instance = await startServer(transactionPool);
+  try {
+    const input = signal();
+    const response = await submit(input, token, instance.url);
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { state: "rejected", code: "storage_unavailable" });
+    await transactionPool.query("DROP TRIGGER disconnect_intake ON signals");
+    const retry = await submit(input, token, instance.url);
+    assert.equal(retry.status, 202);
+    const receipt = await retry.json();
+    assert.deepEqual(await (await submit(input, token, instance.url)).json(), receipt);
+  } finally {
+    await instance.stop();
+    await transactionPool.query(`DROP SCHEMA "${failureSchema}" CASCADE`);
+    await transactionPool.end();
+  }
+});
+
 test("real storage connection loss remains retryable without exposing driver details", async () => {
   const disconnectingPeer = createTcpServer(socket => socket.destroy());
   await new Promise<void>(resolve => disconnectingPeer.listen(0, "127.0.0.1", resolve));
