@@ -1,0 +1,37 @@
+name: personal-world-model
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: pwm
+      POSTGRES_PASSWORD: local-development-only
+      POSTGRES_DB: pwm
+    ports:
+      - "127.0.0.1:55431:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pwm -d pwm"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  postgres-test:
+    image: postgres:17
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: pwm_test
+      POSTGRES_PASSWORD: local-test-only
+      POSTGRES_DB: pwm_test
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pwm_test -d pwm_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:

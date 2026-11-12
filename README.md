@@ -187,17 +187,22 @@ The initial product is not intended to be:
 
 ## Status
 
-**Discovery, Wayfinder decision work and initial technical SPEC are delivered; implementation has not started (2026-10-26).** The product thesis remains in [docs/PRD.md](docs/PRD.md). [Wayfinder map #1](https://github.com/DanieleSuppo/personal-world-model/issues/1) and decisions #2-#15 are closed. [SPEC issue #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) remains open as the implementation parent, with 14 open implementation tickets #17-#30. There is no product runtime or completed cross-AI integration.
+**Discovery, Wayfinder decision work and the revised technical SPEC are delivered; the first implementation slice (#31) now runs locally.** The product thesis remains in [docs/PRD.md](docs/PRD.md). [Wayfinder map #1](https://github.com/DanieleSuppo/personal-world-model/issues/1) and decisions #2-#15 are closed. [SPEC issue #16](https://github.com/DanieleSuppo/personal-world-model/issues/16), revised on 2026-11-11, remains open as the implementation parent for the 28-ticket breakdown #31-#58. Previous tickets #17-#30 were closed as superseded (`not planned`), not completed. The runtime currently supports authenticated Signal intake and durable, idempotent operational receipts through the canonical API. Learning, cross-AI integration and managed deployment are not yet implemented. See [local development and API documentation](docs/development.md) for setup, contracts and limitations.
 
-The technical SPEC resolves the canonical API, Signal/Model Assertion and Context Bundle contracts, PostgreSQL authoritative ledger direction, purpose-mediated serving, initial ChatGPT export and Calendar sources, ChatGPT MCP and Anthropic consumer, managed key boundary and portable self-hosted export. These are **specified choices, not shipped capabilities**.
+The revised technical SPEC defines the canonical API, PostgreSQL authoritative ledger, durable retention of acquired conversations until successful Dreaming consolidation, episodic and semantic knowledge, explicit Personal Directives, derived Context Cards and purpose-mediated Context Bundles. It also specifies initial ChatGPT export and Calendar sources, ChatGPT MCP and an Anthropic Consumer, managed security and portable self-hosted export that preserves pending consolidation material. It supersedes incompatible earlier lifecycle and serving decisions. Except for the #31 intake slice, these remain **specified choices, not shipped capabilities**.
 
-**Immediate unblocked ticket:** [#17, canonical Signal intake and receipt contract](https://github.com/DanieleSuppo/personal-world-model/issues/17). Keep the cross-AI continuity path visible through implementation; do not add a generic memory framework as a prerequisite.
+**Implemented local slice:** [#31, Receive idempotent Signals with explicit origin and receipts](https://github.com/DanieleSuppo/personal-world-model/issues/31). Select subsequent work from the live GitHub blocking dependencies, not ticket numbers alone. Keep the cross-AI continuity path visible through implementation; do not add a generic memory framework as a prerequisite.
 
-## Development workflow and next handoff (2026-10-26)
+<a id="development-workflow-and-next-handoff-2026-10-26"></a>
+
+## Development workflow and next handoff
+
+**Workflow: Matt Pocock skills, with GitHub Issues as the source of truth for scope, dependencies and implementation evidence.** The sequence is product discovery -> `/wayfinder` -> technical SPEC -> `to-tickets` -> ticket implementation -> acceptance verification.
 
 Use the installed Matt Pocock skills and existing GitHub Issues tracker ([AGENTS.md](AGENTS.md), [issue-tracker configuration](docs/agents/issue-tracker.md), [domain guidance](docs/agents/domain.md)). The [PRD](docs/PRD.md) defines the product; [SPEC #16](https://github.com/DanieleSuppo/personal-world-model/issues/16) and its GitHub tickets define the current implementation scope. Do not replace the installed workflow with a project-specific process.
 
-- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> technical SPEC (#16, delivery parent still open) -> implementation tickets (#17-#30).
-- **When a WIP lane is available:** run standard ticket implementation from `/implement #17` if installed, then follow genuine GitHub blocking dependencies. Verify behavior through the canonical API and capture evidence in the ticket.
-- **Proof of product value:** an actual two-consumer context-continuity and controlled-disclosure scenario. MCP, Anthropic, Calendar, security and self-hosting remain requirements until demonstrated.
+- **Completed:** product discovery -> `/wayfinder` (#1-#15 closed) -> revised technical SPEC (#16, delivery parent still open) -> approved `to-tickets` breakdown (#31-#54, refined into 28 single-session tickets #31-#58).
+- **Current stage:** ticket implementation; #31 provides the first runnable API contract slice. No new broad discovery or benchmark programme is required.
+- **When a WIP lane is available:** select the next unassigned, unblocked implementation ticket from GitHub and run `/implement <ticket>` if installed, following genuine GitHub blocking dependencies. If that command is unavailable, use the installed implementation skills against the same ticket and acceptance criteria; do not assume the command exists. Verify behavior through the canonical API and capture evidence in the ticket.
+- **Proof of product value:** [#54](https://github.com/DanieleSuppo/personal-world-model/issues/54), an actual two-consumer context-continuity and controlled-disclosure scenario. MCP, Anthropic, Calendar, security and self-hosting remain requirements until demonstrated.
 - **Scope decisions:** use a concrete ticket and the normal skill workflow to phase delivery rather than quietly dropping PRD invariants or restarting broad discovery.
