@@ -30,4 +30,10 @@
 - [x] Slice 3 GREEN: implement explicit deletion and digest-based duplicate comparison. Run focused tests and typecheck.
 - [x] Verify upgrade from migrations 001-003 with real retained input and retry; rerun migration idempotently.
 - [x] Update docs, startup schema check and handoff. Run `npm run typecheck`, focused tests, `npm test`, `npm run build`, `git diff --check`.
-- [ ] Commit, run final independent Standards/Spec review, fix material findings with regression tests, record issue evidence and create PR.
+- [x] Commit, run final independent Standards/Spec review, fix material findings with regression tests, record issue evidence and create PR.
+
+## Completion evidence
+- Full suite: 29/29 tests; typecheck, build and whitespace checks pass.
+- Spec review passed. Standards review's blocking privacy-sweep issue was reproduced and fixed RED→GREEN; no unresolved blockers.
+- PR: https://github.com/DanieleSuppo/personal-world-model/pull/59 (CI status remains a separate remote gate).
+- Deferred non-blockers: direct DELETE no-store assertion; actor metadata when another deletion caller exists; explicit full-erasure/digest transition. Ordinary cleanup remains disabled until #35, and retention stays with existing Signal ownership.
