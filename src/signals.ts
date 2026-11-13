@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Pool } from "pg";
 import type { Principal, Receipt, Signal } from "./contracts.js";
 
@@ -34,7 +34,10 @@ function principalScope(principal: Principal): [tenantId: string, originType: Pr
 
 type SignalRow = {
   receipt_id: string;
-  content: string;
+  content: string | null;
+  content_sha256: Buffer;
+  content_deleted_at: Date | null;
+  content_deletion_reason: "user_request" | "privacy_policy" | null;
   origin_type: Signal["origin"]["type"];
   origin_id: string;
   fidelity: Signal["fidelity"];
@@ -46,7 +49,8 @@ type SignalRow = {
 };
 
 function assertSameInput(row: SignalRow, signal: Signal): void {
-  if (row.content !== signal.content || row.fidelity !== signal.fidelity ||
+  if (!row.content_sha256.equals(createHash("sha256").update(signal.content, "utf8").digest()) ||
+      row.fidelity !== signal.fidelity ||
       row.source_item_id !== (signal.sourceItem?.id ?? null) ||
       row.source_revision !== (signal.sourceItem?.revision ?? null)) {
     throw new SignalConflict("idempotency_conflict");
@@ -131,6 +135,38 @@ export async function submitSignal(pool: Pool, principal: Principal, signal: Sig
     client.release(discardClient);
     client.off("error", connectionFailed);
   }
+}
+
+function retainedSignal(row: SignalRow) {
+  return {
+    receipt: receipt(row),
+    content: row.content,
+    retention: row.content_deleted_at ? {
+      state: "deleted", reason: row.content_deletion_reason, deletedAt: row.content_deleted_at.toISOString(),
+    } : { state: "pending" },
+  };
+}
+
+export async function deleteSignalContent(pool: Pool, principal: Principal, id: string) {
+  if (principal.origin.type !== "user") return undefined;
+  const result = await pool.query<SignalRow>(
+    `UPDATE signals SET content = NULL,
+       content_deleted_at = COALESCE(content_deleted_at, CURRENT_TIMESTAMP),
+       content_deletion_reason = COALESCE(content_deletion_reason, 'user_request')
+     WHERE receipt_id = $1 AND tenant_id = $2 RETURNING *`,
+    [id, principal.tenantId],
+  );
+  return result.rows[0] ? retainedSignal(result.rows[0]) : undefined;
+}
+
+export async function getRetainedSignal(pool: Pool, principal: Principal, id: string) {
+  if (principal.origin.type !== "user") return undefined;
+  const result = await pool.query<SignalRow>(
+    "SELECT * FROM signals WHERE receipt_id = $1 AND tenant_id = $2",
+    [id, principal.tenantId],
+  );
+  const row = result.rows[0];
+  return row ? retainedSignal(row) : undefined;
 }
 
 export async function getReceipt(pool: Pool, principal: Principal, id: string): Promise<Receipt | undefined> {
