@@ -17,7 +17,8 @@ Test seam remains the already approved canonical HTTP API with actual PostgreSQL
 - [x] Establish baseline: strict typecheck and existing 18 API contract tests.
 - [x] Consolidate tenant/origin SQL scope and test server fixtures; rerun the unchanged contract suite.
 - [x] Add failing API coverage for deterministic storage/schema faults and closed-pool misuse returning 500; prove real connectivity loss still returns 503. Implement narrow classification and safe diagnostics.
-- [ ] Update error documentation, run full tests/typecheck/build/diff checks, obtain independent review, commit locally and append evidence to #31. No push.
+- [x] Update error documentation, run full tests/typecheck/build/diff checks, obtain independent review and commit locally. No push.
+- Append completion evidence to #31 after the final documentation commit.
 
 ## Execution ledger
 
@@ -28,4 +29,6 @@ Test seam remains the already approved canonical HTTP API with actual PostgreSQL
 - Verification before independent review: 20/20 full-suite tests, typecheck, build and diff whitespace checks pass. No migration, dependency or production deployment changes. Two independent reviewers confirmed the requested refactoring and public error distinction, without scope creep or content leakage.
 - Review adjudication: the claim that no uncoded driver message was tested was disproved by a direct probe: the existing disconnecting-peer fixture produces `Connection terminated unexpectedly` with no code. Deliberately ended pg clients remain internal faults (`client._ending`), like ended pools. Cancellation/timeouts remain potentially transient; documentation now requires bounded backoff and finite retry limits. Added the remaining named network-down/abort syscall codes.
 - Rollback review led to a real regression test: terminating the PostgreSQL backend during intake raised an uncaught connection error during rollback. The fix listens for checked-out client connection errors, preserves the primary operation error when rollback fails, and discards the broken client. The API now returns 503 and accepts/reuses the original key after recovery. Test assertions remain at HTTP; an isolated fixture trigger causes actual backend termination.
-- After the cleanup fix: 21/21 contract tests and typechecking pass. Focused final cleanup review and final completion evidence pending.
+- After the cleanup fix: 21/21 contract tests and typechecking pass. Focused final cleanup review also passed: no listener leak, no unsafe client reuse, original PostgreSQL error preserved, and successful/conflicting intake behavior unchanged. The reviewer independently reproduced the pre-fix failure and confirmed the new regression test passes.
+- A low-severity observation concerned the pre-existing migration runner, outside this follow-up: its connection-drop diagnostic/cleanup does not yet use the intake pattern. Narrowed the documentation claim explicitly to Signal intake rather than implying all transactions are covered. Migration changes and optional per-outage logging are not included.
+- Final state: all three user-requested review refinements are implemented. No unaddressed finding in the changed intake behavior; the known migration-runner observation is recorded for separate work.
