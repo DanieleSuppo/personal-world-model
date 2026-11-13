@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   pool.on("error", () => console.error("A database connection failed."));
   try {
     // Start only when the schema is installed. Migration is an explicit operator step.
-    await pool.query("SELECT receipt_id FROM signals LIMIT 0");
+    await pool.query("SELECT receipt_id, content_sha256, content_deleted_at, content_deletion_reason FROM signals LIMIT 0");
     const server = createSignalServer({ pool, principals });
     await new Promise<void>((resolve, reject) => {
       server.once("error", reject);
