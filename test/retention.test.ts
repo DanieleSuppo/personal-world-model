@@ -195,6 +195,33 @@ test("ordinary processing cannot replace or delete pending content, even with a 
   });
 });
 
+test("documented privacy sweep preserves tombstones and safely retries mixed pending/deleted content", async () => {
+  const pendingSignal = input();
+  const pending = await submit(pendingSignal);
+  const alreadyDeleted = await submit(input());
+  const deletion = await request("/v1/signals/" + alreadyDeleted.receiptId, "DELETE");
+  assert.equal(deletion.status, 200);
+  const tombstone = await deletion.json();
+  const externalInput = input({ origin: stranger.origin });
+  const externalResponse = await request("/v1/signals", "POST", stranger, externalInput);
+  assert.equal(externalResponse.status, 202);
+  const external = await externalResponse.json();
+  const documentation = await readFile(new URL("../docs/development.md", import.meta.url), "utf8");
+  const statement = documentation.match(/\x60\x60\x60sql\n([\s\S]*?)\n\x60\x60\x60/);
+  assert(statement?.[1], "privacy-policy operator statement must be documented");
+  await pool.query(statement[1], [owner.tenantId]);
+  const cleared = await retained(pending.receiptId);
+  assert.equal(cleared.content, null);
+  assert.equal(cleared.retention.reason, "privacy_policy");
+  assert.deepEqual(cleared.receipt, pending);
+  assert.deepEqual(await retained(alreadyDeleted.receiptId), tombstone);
+  await pool.query(statement[1], [owner.tenantId]);
+  assert.deepEqual(await retained(pending.receiptId), cleared);
+  const externalRead = await request("/v1/signals/" + external.receiptId, "GET", stranger);
+  assert.equal(externalRead.status, 200);
+  assert.equal((await externalRead.json()).content, externalInput.content);
+});
+
 test("additive migration preserves legacy content, receipts and retry keys", async () => {
   const legacySchema = "test_" + randomBytes(12).toString("hex");
   const legacyPool = new Pool({ ...databaseOptions, options: `-c search_path=${legacySchema}` });

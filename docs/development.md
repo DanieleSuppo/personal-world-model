@@ -176,6 +176,19 @@ Explicit deletion returns the same envelope with `"content": null` and `"retenti
 
 The database guards acquired identity/fidelity and prevents ordinary row deletion, truncation and content replacement. Failed or rolled-back processing and even a `committed` operational receipt never authorize raw cleanup. A trusted privacy-policy operation may atomically clear `signals.content`, set `content_deleted_at` and set `content_deletion_reason = 'privacy_policy'`; this does not claim consolidation either. Neither Source nor Consumer APIs expose that operation.
 
+The trusted operator binds `$1` to the intended tenant when executing this privacy-policy statement:
+
+```sql
+UPDATE signals
+SET content = NULL,
+    content_deleted_at = CURRENT_TIMESTAMP,
+    content_deletion_reason = 'privacy_policy'
+WHERE tenant_id = $1 AND content IS NOT NULL;
+```
+
+Already-deleted rows must be excluded: their original reason/timestamp is immutable. The tenant-scoped statement is safe to retry; pending rows are cleared without rewriting earlier deletion records.
+
+
 Deleted payloads retain receipt/source identity, key bindings and a private SHA-256 content fingerprint so exact retries remain idempotent and changed-content retries still conflict without retaining the original text. Duplicate keys or item/revision aliases cannot resurrect deleted content. New revisions remain independently pending; when no revision exists, callers must keep retry keys stable. This payload-deletion operation is not full account erasure: operational metadata and fingerprints remain, and backup expiry/account exit belong to later privacy/deployment work.
 
 There is deliberately no cleanup scheduler or successful-consolidation marker here. #35 must persist an atomic successful Dreaming outcome and exact covered revisions before extending the guard to permit ordinary cleanup. #58 owns automatic selection/retries. A later or concurrent revision is never covered merely because an earlier revision was processed.
