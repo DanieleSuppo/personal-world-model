@@ -1,6 +1,6 @@
 # Personal World Model — Product Requirements Document
 
-**Status:** Discovery consolidated; ready for specification/design exploration  
+**Status:** Product decisions consolidated 2026-11-11; revised SPEC #16 and replacement implementation tickets #31-#58 published; implementation not started  
 **Project name:** Personal World Model  
 **Repository:** `personal-world-model`  
 **Working product thesis:** *Your context follows you.*
@@ -335,11 +335,11 @@ This may include:
 - the relationship between observations and resulting knowledge;
 - indications of reinforcement, contradiction, or change.
 
-The system should avoid obsessively duplicating complete emails, entire AI histories, documents, or every intermediate observation when a compact representation is sufficient.
+The system must retain all conversation material actually received, preserving whether it is a full transcript, excerpt or summary, until a successful durable Dreaming/consolidation outcome. After that, raw retention follows explicit policy, while meaningful episodes, selected excerpts, observations and lineage remain available for reassessment. It is not intended as a permanent duplicate archive of every source.
 
 However, consolidation must not prevent later reassessment. New evidence may make old signals meaningful in ways that were not apparent when those signals first arrived.
 
-The exact balance between raw excerpts, observations, aggregates, historical windows, and reprocessing is deliberately deferred to specification/design.
+The SPEC defines the authoritative ledger and consolidation boundary; implementation chooses bounded storage and retrieval mechanisms without changing the requirement to retain all actually acquired conversation material until durable consolidation.
 
 ---
 
@@ -413,7 +413,7 @@ A new signal may make older observations or source material newly informative.
 
 For example, ten purchases considered separately may be inconclusive; an eleventh may reveal a coherent life change that requires reconsidering the earlier ten as a group.
 
-How to implement historical windows, deltas, compaction, batch processing, and bounded reprocessing is deliberately deferred to the design phase.
+The SPEC defines asynchronous Dreaming and bounded reassessment; implementation may choose internal batching, windows and worker mechanisms without reopening those product decisions.
 
 ---
 
@@ -529,7 +529,7 @@ Sensitivity should combine:
 
 Some categories should receive strong default protection, while the user remains able to make the system more restrictive.
 
-Exact taxonomy and policy semantics are deferred to specification.
+The current SPEC defines three sensitivity levels and per-request purpose mediation; internal policy implementation details remain flexible.
 
 ---
 
@@ -572,7 +572,7 @@ The current target is:
 
 > **The service operator should not have standing access to the user's Personal World Model.**
 
-The exact technical mechanism remains open because the system must perform inference and retrieval over personal knowledge, unlike a passive encrypted vault.
+The revised SPEC #16 selects managed runtime processing with service-controlled tenant-separated keys, purpose-bound processing and content-blind human support. The service must perform authorized inference and retrieval, so this is not a zero-knowledge design.
 
 ### 16.2 Deployment model
 
@@ -589,17 +589,7 @@ Open-source or source-visible distribution is a strong hypothesis to evaluate, n
 
 Persistent storage and active reasoning are separate trust problems.
 
-Potential approaches to evaluate later include:
-
-- user-controlled encryption keys;
-- encrypted cloud state;
-- local compute;
-- confidential compute / trusted execution environments;
-- hybrid compute;
-- self-hosted inference;
-- configurable local/open-weight models for self-hosted installations.
-
-The PRD deliberately does not claim Bitwarden-style zero knowledge until an architecture can genuinely support that promise while still performing required reasoning.
+The managed deployment uses tenant-separated runtime key custody, while a portable export is encrypted with a user-controlled passphrase. A self-hosted deployment operates independently and owns its own keys, storage and model-provider choices. Confidential compute and a specific TEE remain outside the MVP. The product does not claim zero knowledge.
 
 ---
 
@@ -677,6 +667,14 @@ It should provide:
 11. **Consumer authorization and revocation** with per-request policy enforcement.
 12. **Managed deployment path** and an architecture that preserves a credible route to first-class self-hosting.
 13. **Portable/exportable personal state.**
+14. **Meaningful episodic memory** retaining contextualized experiences independently of generalized assertions.
+15. **Durable complete-conversation retention** for all actually acquired conversation material until successful Dreaming; source excerpts and summaries are never misrepresented as complete transcripts.
+16. **Asynchronous Dreaming** with durable revision coverage, safe retry and bounded reassessment.
+17. **Disclosure lineage and evidence independence**, including downstream echoes of previously shared information.
+18. **Personal Directives** with explicit user origin, scope, validity and supersession, provided as context rather than enforced on the harness.
+19. **Derived Context Cards** with freshness/invalidation and identical disclosure policy to other serving paths.
+20. **Adaptive retrieval** including deeper bounded episodic recall when the task requires it.
+21. **User-associated skill/procedure discovery** through canonical API and compatible adapters, without automatic installation or execution.
 
 ---
 
@@ -772,7 +770,7 @@ Important dimensions include:
 - latency and cost of maintaining the model;
 - user trust and perceived “already knows me” effect.
 
-The precise benchmark design, datasets, scoring rubrics, and regression harness are specification/evaluation work and are intentionally not defined in this PRD.
+No standalone benchmark programme, scoring rubric or evaluation laboratory is required for the MVP. Verify observable product behavior through the canonical API and the real two-consumer integration path.
 
 ---
 
@@ -797,8 +795,8 @@ The following decisions are considered sufficiently stable to guide the next pha
 15. **Consumer authorization is persistent but purpose/relevance/sensitivity policy is evaluated per request.**
 16. **Correction is conversational semantic reassessment, not manual memory CRUD.**
 17. **Disconnecting a source does not automatically erase already learned knowledge.**
-18. **The product is not a complete raw-data vault.**
-19. **Enough compact evidence/lineage should remain internally to support later reassessment without obsessively storing every source item.**
+18. **The product is not a permanent raw-data vault; acquired conversations remain intact until successful durable consolidation, subject to explicit deletion/privacy obligations.**
+19. **Meaningful episodic history and compact evidence/lineage survive consolidation; complete conversations remain available until successful durable Dreaming, then follow retention policy.**
 20. **Managed hosting is the default product path; self-hosting is a first-class alternative.**
 21. **The service operator should not have standing access to the Personal World Model.**
 22. **No API keys should be required from ordinary managed-service users.**
@@ -806,16 +804,41 @@ The following decisions are considered sufficiently stable to guide the next pha
 
 ---
 
-## 25. Questions explicitly deferred to specification / Wayfinder
+## 24A. Memory decisions agreed 2026-11-11
 
-The next phase should resolve implementation and architecture questions without reopening settled product principles unless evidence forces it.
+These product requirements are reflected in the revised SPEC #16 and replacement tickets #31-#58; none is a shipped capability. No new discovery, benchmarking or research phase is a prerequisite.
 
-Key deferred questions include:
+### Episodic memory
+Preserve meaningful contextualized experiences, events, decisions and outcomes, including relevant time, participants, applicability and lineage when available, alongside generalized knowledge and hypotheses. Episodes must remain retrievable even when no immediate generalization exists. They need neither verbatim transcripts nor a separate database.
 
-- internal representation: graph, relational, document, hybrid, or other;
+### Conversation retention and Dreaming
+Persist all content of each conversation actually acquired, whether a complete transcript or only a partial excerpt/summary identified by its fidelity, until an asynchronous Dreaming/consolidation process has completed successfully and durably committed its outcome. Never claim unavailable parts of a conversation were retained. A receipt, attempted extraction or partial processing does not authorize raw cleanup. After success, preserve relevant episodes, observations, selected excerpts and lineage; raw material follows explicit retention policy. User deletion and legal/privacy obligations override ordinary retention. Incremental learning before consolidation remains possible with appropriate status. Dreaming deduplicates, relates, consolidates and revisits knowledge, including bounded targeted reassessment; it must not turn uncertain interpretations into facts.
+
+### Disclosure lineage and independent evidence
+Record what Personal World Model communicated to whom, when and for what purpose, including Consumer identity, Context Bundle/response identifier and disclosed item identities and versions. This records disclosure, not compliance by the Consumer. If a Consumer repeats information previously provided by the model, that echo is not independent evidence. Repetition from the same origin cannot inflate support. Explicit new user confirmation may be independent, but user-originated statements must be distinguished from agent restatements wherever observable. Unknown lineage is not presumed independent.
+
+### Personal Directives and procedural knowledge
+Separate factual knowledge, inferred preferences, explicit user Directives and agent procedures/skills. An inferred habit or preference must never silently become a Directive. Directives carry explicit user origin, scope, temporal status, correction and supersession. The Context Serving Engine returns applicable Directives as such; the receiving harness decides whether and how to use them and handles conflicts with its own rules and capabilities. Personal World Model neither enforces behavior nor claims instruction precedence over the harness. User-preferred procedures may be remembered without turning Personal World Model into an agent runtime.
+
+### Skill discovery
+Support a catalogue of user-associated procedures and skills through the canonical API with purpose and disclosure checks. Compatible harnesses may discover/retrieve these through an MCP adapter; native Agent Skills artifacts or references may be provided by an adapter when supported. Neither protocol guarantees automatic installation or execution. Do not silently turn conversation-derived knowledge into executable or installable skills.
+
+### Adaptive retrieval and Context Cards
+Use a lightweight ordinary retrieval path and a deeper bounded path for complex or episodic tasks, subject to the same authorization and purpose controls. Context Cards are reusable, compact, topic-oriented derived projections referencing underlying knowledge, episodes and relevant directives, with freshness/version metadata. They are never authoritative; they can be invalidated and regenerated. Context Bundles remain task-specific and can combine cards with current underlying state. A future visual presentation is possible but not part of the current scope.
+
+### Persistence and delivery
+Keep PostgreSQL as the sole authoritative ledger; cards and indexes are rebuildable projections. Oracle Agent Memory, Hermes and OpenClaw are inspirations, not dependencies. The revised SPEC #16 and replacement tickets #31-#58 govern implementation; historical tickets #17-#30 are superseded. No generic memory framework, benchmark programme or renewed discovery is a prerequisite.
+
+---
+
+## 25. Implementation choices not requiring renewed discovery
+
+The revised SPEC #16 already resolves the authoritative ledger, source/consumer API, semantic commit, retention boundary, purpose mediation, MCP adapter, export and self-hosted trust boundaries. The following are implementation choices, not unresolved product gates:
+
+- internal PostgreSQL schema and rebuildable serving projections;
 - source normalization contracts;
 - exact Signal / Observation / Knowledge representation;
-- how much raw excerpt versus compact observation to retain;
+- selection of post-consolidation excerpts and observations, subject to episodic and lineage preservation;
 - bounded historical reprocessing and reassessment windows;
 - batch, micro-batch, event-driven, and priority-triggered learning;
 - delta handling and source synchronization;
@@ -824,16 +847,16 @@ Key deferred questions include:
 - compute budgets for free and premium tiers;
 - exact semantic-commit invariants;
 - context retrieval and bounded iterative retrieval design;
-- exact authorization/scoping model;
-- MCP versus API versus other consumer protocols;
+- implementation of the specified per-request purpose, sensitivity and grant contracts;
+- adapter mechanics for the canonical HTTPS API, MCP and optional native skill formats;
 - source-specific constraints for ChatGPT, Claude, Gemini, and future providers;
-- user-key ownership and key recovery;
-- managed confidential-compute architecture;
+- operational details of managed tenant key rotation and account recovery under the specified custody boundary;
+- future confidential-compute deployment profile, explicitly outside MVP;
 - local versus server-side compute;
-- self-host deployment architecture;
-- portable export format;
+- deployment mechanics for the specified independent self-hosted engine and ledger;
+- versioned encoding of the specified encrypted portable package;
 - open-source/source-visible licensing decision;
-- concrete evaluation harness and benchmark datasets.
+- canonical API contract checks and real cross-AI integration verification, without a separate benchmark harness.
 
 ---
 
@@ -845,4 +868,4 @@ The design should preserve this central product boundary:
 
 > **The Personal World Model's job is to understand and maintain the person independently of any assistant, then make the right part of that understanding available to the right consumer for the right purpose.**
 
-The next step is specification and architecture exploration, not further broad product ideation.
+The next step is standard /implement #31 followed by the dependency frontier in #31-#58, culminating in the actual cross-AI integration path #54. Broad product discovery and ticket alignment are complete.
