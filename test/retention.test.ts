@@ -148,6 +148,7 @@ test("explicit user deletion survives restart and duplicate delivery without cla
   const path = "/v1/signals/" + receipt.receiptId;
   const deletion = await request(path, "DELETE");
   assert.equal(deletion.status, 200);
+  assert.equal(deletion.headers.get("cache-control"), "no-store");
   const deleted = await deletion.json();
   assert.deepEqual(deleted, {
     receipt, content: null,

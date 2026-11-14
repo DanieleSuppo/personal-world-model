@@ -36,4 +36,5 @@
 - Full suite: 29/29 tests; typecheck, build and whitespace checks pass.
 - Spec review passed. Standards review's blocking privacy-sweep issue was reproduced and fixed RED→GREEN; no unresolved blockers.
 - PR: https://github.com/DanieleSuppo/personal-world-model/pull/59 (CI status remains a separate remote gate).
-- Deferred non-blockers: direct DELETE no-store assertion; actor metadata when another deletion caller exists; explicit full-erasure/digest transition. Ordinary cleanup remains disabled until #35, and retention stays with existing Signal ownership.
+- DELETE no-store now has a direct HTTP assertion, verified by a failing header mutation and a passing restored implementation.
+- Accepted limits: actor metadata when another deletion caller exists; explicit full-erasure/digest transition. Ordinary cleanup remains disabled until #35, and retention stays with existing Signal ownership.
