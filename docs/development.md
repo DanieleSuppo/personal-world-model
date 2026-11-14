@@ -1,6 +1,6 @@
-# Local development and Signal API (#31)
+# Local development and Signal API (#31–#32)
 
-This repository now contains the first runnable Personal Context Engine slice: durable Signal intake and operational receipts. It is an API service, not a frontend, desktop app, learning engine, or deployed managed service.
+This repository now contains the first runnable Personal Context Engine slice: durable Signal intake, operational receipts and protected acquired-content retention. It is an API service, not a frontend, desktop app, learning engine, or deployed managed service.
 
 ## Where components run
 
@@ -102,7 +102,7 @@ Contract:
 - `origin.type`: `source`, `consumer`, or `user`. It must match the authenticated principal, including `origin.id`.
 - `fidelity`: `raw`, `excerpt`, or `summary`. This describes acquired input; it never grants semantic authority.
 - `idempotencyKey`: required nonempty string. Tenant and origin scope its uniqueness.
-- `content`: required nonempty text, at most 49,152 Unicode code points. The entire UTF-8 JSON request must also fit within 65,536 bytes. Content is retained unchanged; no cleanup runs in this slice.
+- `content`: required nonempty text, at most 49,152 Unicode code points. The entire UTF-8 JSON request must also fit within 65,536 bytes. Content is retained unchanged until an explicit user/privacy deletion; no automatic cleanup runs in this slice.
 - `sourceItem`: required for Source origin, optional otherwise. `id` is the stable external identity. `revision` and incremental `cursor` are optional nonempty strings; omit unavailable values instead of sending null. IDs, revisions and keys are limited to 256 Unicode code points; cursors to 2,048.
 - All strings must be valid Unicode without NUL characters. Unknown fields are rejected, including tenant selection and attempted semantic writes.
 
@@ -142,11 +142,62 @@ After a network failure or 503, retry the **same** idempotency key with bounded 
 
 Recognized connectivity/system errors and transient PostgreSQL SQLSTATE codes map to 503. The installed driver's known uncoded connection/timeout failures are recognized by exact message; other unknown failures map to 500. Query cancellation/timeouts can reflect temporary contention and remain 503; persistent timeouts require investigation, not unlimited retries. Using a pool or client that application code deliberately closed is an internal fault, not a connectivity outage. Internal faults emit a static, content-free diagnostic. Neither response bodies nor this diagnostic expose raw exceptions, database queries, credentials or personal content.
 
+## Acquired-content retention (#32)
+
+All accepted Signals receive conservative pending retention, including acquired conversations. Intake does not yet classify conversation versus non-conversation material. Fidelity describes exactly what was acquired: `excerpt` and `summary` never imply that missing transcript portions exist.
+
+### Recover or explicitly delete acquired content
+
+Only a configured `user`-origin principal in the same tenant may access `GET /v1/signals/{receiptId}` or `DELETE /v1/signals/{receiptId}`. In this local credential model, provisioning a user-origin token grants owner access within that tenant. Source and Consumer tokens cannot use these routes, even for their own submissions. Unknown and inaccessible Signals both return 404; missing/invalid credentials return 401. These are owner operations, not a Consumer context-serving bypass.
+
+For the example credential file above, the third credential is the user:
+
+```sh
+USER_TOKEN=$(node -p "JSON.parse(require('fs').readFileSync('.local/principals.json', 'utf8'))[2].token")
+curl --fail-with-body http://127.0.0.1:3000/v1/signals/RECEIPT_UUID \
+  -H "Authorization: Bearer $USER_TOKEN"
+# Explicitly request deletion of this acquired payload, not the whole source/model:
+curl --fail-with-body -X DELETE http://127.0.0.1:3000/v1/signals/RECEIPT_UUID \
+  -H "Authorization: Bearer $USER_TOKEN"
+unset USER_TOKEN
+```
+
+Both successful operations return HTTP 200 with `Cache-Control: no-store`. Recovery returns:
+
+```json
+{
+  "receipt": {"receiptId": "<UUID>", "state": "accepted", "origin": {"type": "source", "id": "chat-export"}, "fidelity": "excerpt", "sourceItem": {"id": "conversation-1", "revision": "1"}, "receivedAt": "<UTC timestamp>"},
+  "content": "Exactly the acquired excerpt, without invented transcript portions.",
+  "retention": {"state": "pending"}
+}
+```
+
+Explicit deletion returns the same envelope with `"content": null` and `"retention": {"state": "deleted", "reason": "user_request", "deletedAt": "<UTC timestamp>"}`. Repeated deletion returns the original deletion metadata. The operational receipt remains unchanged: deletion is **not** successful Dreaming or a Semantic Commit.
+
+The database guards acquired identity/fidelity and prevents ordinary row deletion, truncation and content replacement. Failed or rolled-back processing and even a `committed` operational receipt never authorize raw cleanup. A trusted privacy-policy operation may atomically clear `signals.content`, set `content_deleted_at` and set `content_deletion_reason = 'privacy_policy'`; this does not claim consolidation either. Neither Source nor Consumer APIs expose that operation.
+
+The trusted operator binds `$1` to the intended tenant when executing this privacy-policy statement:
+
+```sql
+UPDATE signals
+SET content = NULL,
+    content_deleted_at = CURRENT_TIMESTAMP,
+    content_deletion_reason = 'privacy_policy'
+WHERE tenant_id = $1 AND content IS NOT NULL;
+```
+
+Already-deleted rows must be excluded: their original reason/timestamp is immutable. The tenant-scoped statement is safe to retry; pending rows are cleared without rewriting earlier deletion records.
+
+
+Deleted payloads retain receipt/source identity, key bindings and a private SHA-256 content fingerprint so exact retries remain idempotent and changed-content retries still conflict without retaining the original text. Duplicate keys or item/revision aliases cannot resurrect deleted content. New revisions remain independently pending; when no revision exists, callers must keep retry keys stable. This payload-deletion operation is not full account erasure: operational metadata and fingerprints remain, and backup expiry/account exit belong to later privacy/deployment work.
+
+There is deliberately no cleanup scheduler or successful-consolidation marker here. #35 must persist an atomic successful Dreaming outcome and exact covered revisions before extending the guard to permit ordinary cleanup. #58 owns automatic selection/retries. A later or concurrent revision is never covered merely because an earlier revision was processed.
+
 ## Storage, concurrency and migrations
 
 PostgreSQL stores one Signal with its receipt metadata and a separate set of idempotency-key bindings. An atomic transaction uses a PostgreSQL advisory lock scoped to tenant/origin; database constraints additionally enforce unique keys and available item/revision identities. Independent API processes therefore share the same concurrency boundary. If a connection fails during a Signal intake transaction, cleanup preserves the original operation error and discards the broken client instead of returning it to the pool. Serialization is deliberately conservative for this first slice; there is no throughput SLA.
 
-Run `npm run migrate` before starting a new version. Versioned SQL files are applied once, transactionally, under a migration lock. These additive migrations do not delete personal data. A failed migration rolls back. Do not edit an applied migration or use destructive down-migrations to roll back application code; retain the compatible schema, and back up the database before later schema changes. `node dist/src/migrate.js` is also available after building.
+Run `npm run migrate` before starting a new version. Versioned SQL files are applied once, transactionally, under a migration lock. These additive migrations do not delete personal data. Migration 004 backfills content fingerprints and installs retention guards without changing acquired content or receipt identity. Back up an existing development/self-hosted database before upgrading; do not migrate a production database through this development setup. Startup checks the retention columns and fails closed if the migration has not run. A failed migration rolls back. Do not edit an applied migration or use destructive down-migrations to roll back application code; retain the compatible schema, and back up the database before later schema changes. Pre-#32 binaries can still insert Signals and serve receipts with this schema, but may return 409 for retries of explicitly deleted payloads; they cannot restore deleted content. Keep #32 code when exact post-deletion retry behavior is required. `node dist/src/migrate.js` is also available after building.
 
 Stopping the development database preserves its named volume:
 
@@ -166,8 +217,8 @@ npm test              # full suite
 npm run build
 ```
 
-Tests use `TEST_DATABASE_URL` when set; otherwise they use the dedicated `pwm_test` database on port 55432. Each suite creates its own randomly named schema and removes only that schema afterward. Never point tests at a production database. Assertions use HTTP responses, not database contents. Fixtures use actual PostgreSQL; no worker or database mocks replace the acceptance contract.
+Tests use `TEST_DATABASE_URL` when set; otherwise they use the dedicated `pwm_test` database on port 55432. Each suite creates its own randomly named schema and removes only that schema afterward. Never point tests at a production database. Recoverability and privacy assertions use HTTP responses, not database contents. Retention tests additionally attempt writes against PostgreSQL's constraint boundary and roll back interrupted transactions; they then verify retained content through HTTP. Fixtures use actual PostgreSQL; no worker or database mocks replace the acceptance contract.
 
-The tests cover receipts, retries, conflicts, revisions, concurrent independent API instances, restart persistence, origins/fidelity, tenant/origin isolation and request validation. CI uses a dedicated PostgreSQL 17 service for the same suite. The test database is disposable; stopping its container loses its contents.
+The tests cover receipts, retries, conflicts, revisions, concurrent independent API instances, restart persistence, origins/fidelity, tenant/origin isolation, request validation, ordinary-cleanup prevention, explicit privacy deletion, replay tombstones and additive upgrade preservation. CI uses a dedicated PostgreSQL 17 service for the same suite. The test database is disposable; stopping its container loses its contents.
 
-Not implemented here: conversation consolidation/retention lifecycle (#32 onward), semantic learning, Context Bundle serving, source adapters, consumer grant management, frontend, MCP, managed cryptography or production deployment.
+Not implemented here: successful Dreaming/consolidation and ordinary post-consolidation cleanup (#35), automatic consolidation (#58), semantic learning, Context Bundle serving, source adapters, consumer grant management, frontend, MCP, managed cryptography or production deployment.

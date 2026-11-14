@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Pool } from "pg";
 import { principalsSchema, signalSchema } from "./contracts.js";
-import { getReceipt, isStorageUnavailable, SignalConflict, submitSignal } from "./signals.js";
+import { deleteSignalContent, getReceipt, getRetainedSignal, isStorageUnavailable, SignalConflict, submitSignal } from "./signals.js";
 
 class RequestError extends Error {
   constructor(readonly status: number, readonly code: string) {
@@ -71,6 +71,16 @@ export function createSignalServer(options: { pool: Pool; principals: unknown })
           throw new RequestError(403, "origin_mismatch");
         }
         send(response, 202, await submitSignal(options.pool, principal, signal));
+        return;
+      }
+      const retained = path?.match(/^\/v1\/signals\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$/i);
+      if (retained?.[1] && (request.method === "GET" || request.method === "DELETE")) {
+        request.resume();
+        const result = request.method === "DELETE"
+          ? await deleteSignalContent(options.pool, principal, retained[1])
+          : await getRetainedSignal(options.pool, principal, retained[1]);
+        if (!result) throw new RequestError(404, "not_found");
+        send(response, 200, result);
         return;
       }
       const match = path?.match(/^\/v1\/signal-receipts\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$/i);
