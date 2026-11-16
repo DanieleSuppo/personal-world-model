@@ -1,6 +1,6 @@
-# Local development and Signal API (#31–#32)
+# Local development and initial learning API (#31–#33)
 
-This repository now contains the first runnable Personal Context Engine slice: durable Signal intake, operational receipts and protected acquired-content retention. It is an API service, not a frontend, desktop app, learning engine, or deployed managed service.
+This repository contains durable Signal intake, protected acquired-content retention and asynchronous initial semantic learning. It is an API service, not a frontend, desktop app or deployed managed service. Only the Engine validates and commits assertions; Source and Consumer clients submit Signals, never trusted proposals.
 
 ## Where components run
 
@@ -12,7 +12,7 @@ Developer machine
     -> separate Docker PostgreSQL on 127.0.0.1:55432 (disposable test storage)
 ```
 
-The long-term product supports managed hosting and independent self-hosting. Production requires HTTPS ingress, private database connectivity, appropriate identity and secret management, backups and the later managed-security work. Docker Compose here is only a local development setup; its fixed database passwords must never be reused for production. No cloud resources or external AI calls are involved.
+The long-term product supports managed hosting and independent self-hosting. Production requires HTTPS ingress, private database connectivity, appropriate identity and secret management, backups and the later managed-security work. Docker Compose here is only a local development setup; its fixed database passwords must never be reused for production. No cloud resources or external AI calls are required. Tests use synthetic local HTTP processor fixtures only. An operator may explicitly configure a processor for learning as described below.
 
 ## Start development
 
@@ -120,7 +120,7 @@ unset TOKEN
 
 HTTP 200 returns the operational receipt only. No source content, Candidate Interpretation, tenant identifier or semantic record is returned. Receipts are accessible only to the same tenant and origin. Unknown and inaccessible receipts both return 404. Responses are marked `Cache-Control: no-store`.
 
-The operational vocabulary is `accepted`, `deferred`, `reassessing`, `committed`, `no meaningful change`, and `rejected`. This slice persists `accepted`; it does not fabricate learning transitions or allow clients to set state. Later Engine work owns those transitions. A rejected HTTP request has no new accepted receipt:
+The operational vocabulary is `accepted`, `deferred`, `reassessing`, `committed`, `no meaningful change`, and `rejected`. Initial intake returns independently of processor latency. The Engine later records `committed`, `no meaningful change` or `deferred`; clients cannot set state. A rejected HTTP request has no new accepted receipt:
 
 ```json
 {"state":"rejected","code":"idempotency_conflict"}
@@ -193,11 +193,69 @@ Deleted payloads retain receipt/source identity, key bindings and a private SHA-
 
 There is deliberately no cleanup scheduler or successful-consolidation marker here. #35 must persist an atomic successful Dreaming outcome and exact covered revisions before extending the guard to permit ordinary cleanup. #58 owns automatic selection/retries. A later or concurrent revision is never covered merely because an earlier revision was processed.
 
+## Initial semantic learning (#33)
+
+### Explicit processor opt-in
+
+Without processor configuration, intake remains available and retained Signals become visibly `deferred` with internal reason `processor_not_configured`. No default endpoint, provider or model exists. To opt in, set both `PWM_PROCESSOR_BASE_URL` and `PWM_PROCESSOR_MODEL`; `PWM_PROCESSOR_API_KEY` is optional when those are set. Partial or invalid configuration fails startup with a content-free error. Restart after configuration changes.
+
+```sh
+# Example for a locally operated OpenAI-compatible processor; choose its actual model name.
+PWM_PROCESSOR_BASE_URL=http://127.0.0.1:8000/v1
+PWM_PROCESSOR_MODEL=your-explicit-model
+# PWM_PROCESSOR_API_KEY=your-secret-if-required
+```
+
+The base URL is an API prefix: `https://processor.example/v1` becomes `https://processor.example/v1/chat/completions`. A trailing slash is normalized. Do not supply the full `/chat/completions` endpoint. HTTPS is required except loopback HTTP (`localhost`, `127.0.0.1`, `[::1]`); URL userinfo, queries, fragments and redirects are forbidden. No URL, key, prompt, acquired text or processor response is logged.
+
+**Configuring a processor authorizes sending acquired text to that operator-selected endpoint.** Check its no-training and operation-only retention terms first. These terms are an operator responsibility, not technically enforced managed privacy protections. Never use real user content during development or tests. The processor receives only the current Signal's acquired text, actual origin and fidelity plus bounded interpretation instructions, not tenant IDs, credentials from the Signal API, unrelated assertions or the whole model. The processor's own optional API key authenticates only its configured endpoint.
+
+Each work attempt makes one HTTP request with a 30-second timeout and a 64-KiB response limit. There are no redirects, tools, model actions, provider fallback or automatic processor-error retries. Signal text is explicitly untrusted data. Strict output validation rejects unknown fields, forged identities, unsupported operations, fabricated excerpts, invalid dates/indexes and imported claims of authenticated user-stated authority. These controls cannot prove semantic truth or make a model immune to instruction injection.
+
+### Outcomes, restart and failure recovery
+
+A small startup/periodic scan processes one Signal per runner at a time. Learning is asynchronous with no priority, ordering, freshness or latency SLA. PostgreSQL, not process-local exclusion, controls independent instances. Only `add` and `no_meaningful_change` are supported. Successful interpretation stores compact Observations and source/revision/fidelity lineage, then atomically commits distinct current Personal Knowledge and High-confidence Hypotheses. A no-change outcome stores compact terminal lineage but no assertions. Private reasoning, prompts, raw model responses and Candidate Interpretations are not persisted.
+
+`current` means the Engine's present conclusion, not permanently true. Validity can describe a past interval and remains independent of applicability. Unknown temporal bounds are omitted. Support is a bounded description, not a global confidence score. Separate Signals may yield overlapping initial assertions; textual similarity does not deduplicate or reinforce them, and correlated revisions remain identifiable.
+
+The conservative Relevant State Version covers the entire tenant. A different semantic change can invalidate an interpretation even for an unrelated topic. The Engine never merges stale proposals silently: it reevaluates at most three times, then defers with `stale_contention`. Exact replay returns the original completion before checking the current version; changed proposal payloads under the same input/policy identity conflict. A new processor configuration fingerprint never automatically reprocesses terminal successful Signals.
+
+Missing-configuration deferrals automatically become eligible once a configured runner starts. Configured processor faults defer with `processor_failed`; invalid semantic output uses `invalid_proposal`. Commit faults defer with `storage_failed` when storage permits recording that diagnosis. These records retain content and remain deferred across scans and restarts until explicit operator diagnosis/requeue. If operational metadata itself cannot persist, learning stops with a static diagnostic rather than looping; investigate storage and restart explicitly. Shutdown aborts and waits for in-flight HTTP before ending the database pool, leaving interrupted, uncommitted work resumable.
+
+There is no public retry endpoint. After diagnosis, a trusted operator may requeue only the intended tenant/receipt. Bind `$1` to the tenant and `$2` to the receipt; run every statement in the same transaction/connection. The row lock and terminal check are required, including when another instance may complete concurrently:
+
+```sql
+BEGIN;
+SELECT receipt_id FROM signals
+WHERE tenant_id = $1 AND receipt_id = $2 FOR UPDATE;
+UPDATE signal_learning_attempts a
+SET state = 'pending', reason = NULL, updated_at = CURRENT_TIMESTAMP
+WHERE a.tenant_id = $1 AND a.receipt_id = $2
+  AND a.state = 'deferred' AND a.reason <> 'processor_not_configured'
+  AND NOT EXISTS (
+    SELECT 1 FROM semantic_commits c
+    WHERE c.tenant_id = a.tenant_id AND c.receipt_id = a.receipt_id
+  );
+COMMIT;
+```
+
+The receipt stays `deferred` until subsequent processing succeeds. Never requeue deleted content expecting recovery: `content_deleted` cannot restore acquired text. Safe, content-free operational reasons are available to the trusted operator in `signal_learning_attempts`, not other origins' receipt reads. Do not alter successful commits, input identities or retained content to force processing.
+
+### Owner-only bounded inspection
+
+`GET /v1/model-assertions?limit=50` returns `{ "assertions": [...] }` with `Cache-Control: no-store`. Only same-tenant `user` credentials can inspect assertions. Source/Consumer access returns 404; another tenant's owner sees only its own assertions. Missing/invalid authentication returns 401. `limit` must be an integer from 1 to 100 (default 50); unknown or repeated query parameters return 400 `invalid_limit`. Results use deterministic `(createdAt,id)` order; this is a bounded first page, not a search or pagination framework.
+
+Each assertion includes `id`, `revision` (initially 1), `claim`, explicit `classification` (`personal_knowledge` or `high_confidence_hypothesis`), `originBasis`, descriptive `support`, `validity`, `applicability`, `sensitivity`, optional `semanticAnchors`, `createdAt` and compact `observations`. Observation fields are `id`, `description`, selected `excerpt`, `receiptId`, actual `origin`, `fidelity` and available `sourceItem` identity/revision/cursor. No full Signal content, tenant identifier, candidate text, prompt or private reasoning is returned. This owner inspection seam is not Consumer Context Bundle serving or a sensitivity-policy bypass for Consumers.
+
+### Retention and privacy deletion remain separate
+
+Incremental Semantic Commit is **not** successful Dreaming and never permits ordinary acquired-content cleanup. Raw content remains owner-recoverable after add, no-change, processor failure and rolled-back commits. Migration 004 guards are unchanged. If privacy deletion locks the Signal first, an in-flight interpretation cannot subsequently create new assertions from that content. If Semantic Commit wins first, the existing #32 payload-deletion operation removes only acquired raw content: existing assertions and compact selected excerpts remain. Full semantic/account erasure and backup expiry require later privacy work; do not represent this payload deletion as erasing all learned information.
+
 ## Storage, concurrency and migrations
 
 PostgreSQL stores one Signal with its receipt metadata and a separate set of idempotency-key bindings. An atomic transaction uses a PostgreSQL advisory lock scoped to tenant/origin; database constraints additionally enforce unique keys and available item/revision identities. Independent API processes therefore share the same concurrency boundary. If a connection fails during a Signal intake transaction, cleanup preserves the original operation error and discards the broken client instead of returning it to the pool. Serialization is deliberately conservative for this first slice; there is no throughput SLA.
 
-Run `npm run migrate` before starting a new version. Versioned SQL files are applied once, transactionally, under a migration lock. These additive migrations do not delete personal data. Migration 004 backfills content fingerprints and installs retention guards without changing acquired content or receipt identity. Back up an existing development/self-hosted database before upgrading; do not migrate a production database through this development setup. Startup checks the retention columns and fails closed if the migration has not run. A failed migration rolls back. Do not edit an applied migration or use destructive down-migrations to roll back application code; retain the compatible schema, and back up the database before later schema changes. Pre-#32 binaries can still insert Signals and serve receipts with this schema, but may return 409 for retries of explicitly deleted payloads; they cannot restore deleted content. Keep #32 code when exact post-deletion retry behavior is required. `node dist/src/migrate.js` is also available after building.
+Run `npm run migrate` before starting a new version. Versioned SQL files are applied once, transactionally, under a migration lock. These additive migrations do not delete personal data. Migration 004 backfills content fingerprints and installs retention guards without changing acquired content or receipt identity. Back up an existing development/self-hosted database before upgrading; do not migrate a production database through this development setup. Migration 005 adds the initial semantic ledger, tenant model versions, compact evidence links and safe learning-attempt metadata without changing migration 004 or raw-retention guards. Startup checks both retention and semantic tables and fails closed if migration has not run. A failed migration rolls back. Do not edit an applied migration or use destructive down-migrations to roll back application code; retain the compatible schema, and back up the database before later schema changes. Pre-#32 binaries can still insert Signals and serve receipts with this schema, but may return 409 for retries of explicitly deleted payloads; they cannot restore deleted content. Keep #32 code when exact post-deletion retry behavior is required. To roll back #33 application code, stop learning and retain migration 005 and all semantic state. Older binaries can continue intake/retention but cannot learn or inspect assertions; they must not be used to erase semantic records. `node dist/src/migrate.js` is also available after building.
 
 Stopping the development database preserves its named volume:
 
@@ -217,8 +275,8 @@ npm test              # full suite
 npm run build
 ```
 
-Tests use `TEST_DATABASE_URL` when set; otherwise they use the dedicated `pwm_test` database on port 55432. Each suite creates its own randomly named schema and removes only that schema afterward. Never point tests at a production database. Recoverability and privacy assertions use HTTP responses, not database contents. Retention tests additionally attempt writes against PostgreSQL's constraint boundary and roll back interrupted transactions; they then verify retained content through HTTP. Fixtures use actual PostgreSQL; no worker or database mocks replace the acceptance contract.
+Tests use `TEST_DATABASE_URL` when set; otherwise they use the dedicated `pwm_test` database on port 55432. Each suite creates its own randomly named schema and removes only that schema afterward. Never point tests at a production database. Recoverability and privacy assertions use HTTP responses, not database contents. Retention tests additionally attempt writes against PostgreSQL's constraint boundary and roll back interrupted transactions; they then verify retained content through HTTP. Fixtures use actual PostgreSQL and the real processor adapter against synthetic local HTTP servers; no database mocks replace the acceptance contract.
 
 The tests cover receipts, retries, conflicts, revisions, concurrent independent API instances, restart persistence, origins/fidelity, tenant/origin isolation, request validation, ordinary-cleanup prevention, explicit privacy deletion, replay tombstones and additive upgrade preservation. CI uses a dedicated PostgreSQL 17 service for the same suite. The test database is disposable; stopping its container loses its contents.
 
-Not implemented here: successful Dreaming/consolidation and ordinary post-consolidation cleanup (#35), automatic consolidation (#58), semantic learning, Context Bundle serving, source adapters, consumer grant management, frontend, MCP, managed cryptography or production deployment.
+Not implemented here: semantic updates/reinforcement/corrections, Episodes (#34), successful Dreaming/consolidation and ordinary post-consolidation cleanup (#35), automatic consolidation (#58), Context Bundle serving, source adapters, consumer grant management, frontend, MCP, managed cryptography or production deployment.
