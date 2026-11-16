@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Pool } from "pg";
 import { principalsSchema, signalSchema } from "./contracts.js";
+import { getCurrentAssertions } from "./knowledge.js";
 import { deleteSignalContent, getReceipt, getRetainedSignal, isStorageUnavailable, SignalConflict, submitSignal } from "./signals.js";
 
 class RequestError extends Error {
@@ -71,6 +72,16 @@ export function createSignalServer(options: { pool: Pool; principals: unknown })
           throw new RequestError(403, "origin_mismatch");
         }
         send(response, 202, await submitSignal(options.pool, principal, signal));
+        return;
+      }
+      if (request.method === "GET" && path === "/v1/model-assertions") {
+        request.resume();
+        if (principal.origin.type !== "user") throw new RequestError(404, "not_found");
+        const params = new URL(request.url!, "http://localhost").searchParams;
+        const rawLimit = params.get("limit");
+        if ([...params.keys()].some(key => key !== "limit") || params.getAll("limit").length > 1 ||
+            (rawLimit !== null && !/^(?:[1-9]|[1-9][0-9]|100)$/.test(rawLimit))) throw new RequestError(400, "invalid_limit");
+        send(response, 200, await getCurrentAssertions(options.pool, principal, rawLimit === null ? 50 : Number(rawLimit)));
         return;
       }
       const retained = path?.match(/^\/v1\/signals\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$/i);
